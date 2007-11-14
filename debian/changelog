@@ -1,0 +1,70 @@
+haskell-unixutils (1.10) unstable; urgency=low
+
+  * Added realpath
+
+ -- Jeremy Shaw <jeremy.shaw@linspire.com>  Fri, 14 Sep 2007 16:00:34 -0700
+
+haskell-unixutils (1.9) unstable; urgency=low
+
+  * Added mkdtemp and withTemporaryDirectory
+
+ -- Jeremy Shaw <jeremy.shaw@linspire.com>  Fri, 14 Sep 2007 15:21:46 -0700
+
+haskell-unixutils (1.8) unstable; urgency=low
+
+  * Add Process.outputOnly function, returns list of stdout and stderr
+    text in the order they appeared.
+
+ -- David Fox <ddssff@gmail.com>  Thu,  9 Aug 2007 07:07:13 -0700
+
+haskell-unixutils (1.7) unstable; urgency=low
+
+  * Add withWorkingDirectory function
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Fri, 20 Jul 2007 16:37:08 -0700
+
+haskell-unixutils (1.6) unstable; urgency=low
+
+  * Fix typo in Linspire.Unix.Process.stderrOnly function, it was returning
+    stdout instead of stderr.
+
+ -- David Fox <david.fox@linspire.com>  Sun, 13 May 2007 09:23:43 -0700
+
+haskell-unixutils (1.5) unstable; urgency=low
+
+  * Add Directory.find function.  Bumping version here because the
+    name will collide with the function in Data.List, so it needs
+    to be hidden by existing library clients.
+
+ -- David Fox <david.fox@linspire.com>  Tue, 23 Jan 2007 16:49:32 -0500
+
+haskell-unixutils (1.4) unstable; urgency=low
+
+  * Rename return type of lazyRun et. al from Element to Output.
+
+ -- David Fox <david.fox@linspire.com>  Mon,  1 Jan 2007 08:26:30 -0800
+
+haskell-unixutils (1.3) unstable; urgency=low
+
+  * Add functions to return a lazy list of process output.
+
+ -- David Fox <david.fox@linspire.com>  Thu, 21 Dec 2006 07:07:09 -0800
+
+haskell-unixutils (1.2) unstable; urgency=low
+
+  * Migrate some functions from missingh and the autobuilder here.
+
+ -- David Fox <david.fox@linspire.com>  Sat,  4 Nov 2006 10:38:33 -0500
+
+haskell-unixutils (1.1) unstable; urgency=low
+
+  * Added Progress and Misc modules.
+
+ -- David Fox <david.fox@linspire.com>  Fri, 11 Aug 2006 08:51:05 -0700
+
+haskell-unixutils (1.0-1) unstable; urgency=low
+
+  * Initial Debian package.
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Tue, 25 Jul 2006 11:47:04 -0700
+

@@ -1,0 +1,47 @@
+Source: haskell-unixutils
+Priority: optional
+Section: devel
+Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
+Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.5.15), ghc6 (>=6.4), ghc6-prof
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08)
+Standards-Version: 3.7.2.0
+
+Package: libghc6-unixutils-dev
+Section: libdevel
+Architecture: any
+Depends: ${haskell:Depends}
+Description: A crude interface between Haskell and Unix-like operating systems
+ Includes functions for mount, umounting, kill processes, safe
+ recursive deletes, and more.
+ .
+ This package contains the libraries compiled for GHC 6.
+
+Package: libghc6-unixutils-prof
+Section: libdevel
+Architecture: any
+Depends: ${haskell:Depends}
+Description: A crude interface between Haskell and Unix-like operating systems
+ Includes functions for mount, umounting, kill processes, safe
+ recursive deletes, and more.
+ .
+ This package contains the libraries compiled for GHC 6 with profiling
+ enabled.
+
+Package: libhugs-unixutils
+Section: libdevel
+Architecture: all
+Depends: ${haskell:Depends}
+Description:  A crude interface between Haskell and Unix-like operating systems
+ Includes functions for mount, umounting, kill processes, safe
+ recursive deletes, and more.
+ .
+ This package contains the libraries compiled for Hugs.
+
+Package: haskell-unixutils-doc
+Section: doc
+Architecture: all
+Description:  A crude interface between Haskell and Unix-like operating systems
+ Includes functions for mount, umounting, kill processes, safe
+ recursive deletes, and more
+ .
+ This package contains the documentation.

@@ -1,0 +1,16 @@
+Name:           Unixutils
+Version:        1.10
+License:        BSD3
+License-File:	debian/copyright
+Author:         Jack Donaldson
+Homepage:       http://www.freespire.org/
+Build-Depends:  base, unix, regex-compat
+Synopsis:       A crude interface between Haskell and Unix-like operating systems
+ghc-options:	-fglasgow-exts -O2 -fasm
+Exposed-modules:
+        Linspire.Unix.Directory, Linspire.Unix.FilePath, Linspire.Unix.List,
+	Linspire.Unix.Misc, Linspire.Unix.Mount, Linspire.Unix.Process,
+	Linspire.Unix.Progress, Linspire.Unix.SpecialDevice
+
+-- For more complex build options see:
+-- http://www.haskell.org/ghc/docs/latest/html/Cabal/
