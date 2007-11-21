@@ -11,4 +11,5 @@ import Data.List
 join :: [a] -> [[a]] -> [a]
 join x l = concat . intersperse x $ l
 
+consperse :: [a] -> [[a]] -> [a]
 consperse = join
