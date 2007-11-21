@@ -1,3 +1,10 @@
+haskell-unixutils (1.11) unstable; urgency=low
+
+  * Build-Depend on -doc packages
+  * Do not compress .haddock files
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Wed, 21 Nov 2007 11:54:01 -0800
+
 haskell-unixutils (1.10) unstable; urgency=low
 
   * Added realpath
