@@ -51,6 +51,7 @@ data SpecialDevice =
     deriving (Show, Ord, Eq)
 
 -- | FIXME: We should really get this value from the mount table.
+sysMountPoint :: FilePath
 sysMountPoint = "/sys"
 
 ofPath :: FilePath -> IO (Maybe SpecialDevice)

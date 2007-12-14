@@ -1,7 +1,7 @@
 Name:           Unixutils
 Version:        1.11
 License:        BSD3
-License-File:	debian/copyright
+-- License-File:	debian/copyright
 Author:         Jack Donaldson
 Homepage:       http://www.freespire.org/
 Build-Depends:  base, unix, regex-compat

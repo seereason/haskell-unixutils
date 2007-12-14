@@ -345,6 +345,7 @@ readStyle text =
 
 -- |The timeDiffToString function returns the empty string for
 -- the zero time diff, this is not the behavior I need.
+fixedTimeDiffToString :: TimeDiff -> [Char]
 fixedTimeDiffToString diff =
     case timeDiffToString diff of
       "" -> "0 sec"

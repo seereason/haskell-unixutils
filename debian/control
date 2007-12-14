@@ -40,6 +40,7 @@ Description:  A crude interface between Haskell and Unix-like operating systems
 Package: haskell-unixutils-doc
 Section: doc
 Architecture: all
+Depends: ghc6-doc, libghc6-base-doc
 Description:  A crude interface between Haskell and Unix-like operating systems
  Includes functions for mount, umounting, kill processes, safe
  recursive deletes, and more

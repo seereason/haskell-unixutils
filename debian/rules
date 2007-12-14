@@ -2,6 +2,9 @@
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
+CABAL_PACKAGE = $(shell dpkg-parsechangelog | sed "1s/source: haskell-//i; q")
+DOC_PACKAGE = haskell-$(CABAL_PACKAGE)-doc
+CABAL_NAME = $(shell ls *.cabal | head -n1 | sed 's/.cabal.*//')
 
 build: build-stamp
 build-stamp:
@@ -44,6 +47,8 @@ install-indep: build-indep
 	# Add here commands to install the package into debian/tmp
 	dh_haskell -i
 	make doc
+	mkdir -p debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/
+	cp -a dist/doc/html/$(CABAL_NAME) debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/html
 
 # Build architecture-independent files here.
 binary-indep: build-indep install-indep
