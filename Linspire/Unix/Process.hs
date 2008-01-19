@@ -30,7 +30,7 @@ import Control.Exception hiding (catch)
 import Control.Parallel.Strategies
 import Data.Char
 import qualified Data.ByteString as B
-import Data.ByteString.Base(toForeignPtr)	-- for hPutNonBlocking only
+import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List
 import Data.Word
 import System.Process

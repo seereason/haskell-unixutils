@@ -4,7 +4,7 @@ License:        BSD3
 -- License-File:	debian/copyright
 Author:         Jack Donaldson
 Homepage:       http://www.freespire.org/
-Build-Depends:  base, unix, regex-compat
+Build-Depends:  base, unix, regex-compat, process, bytestring, directory, old-time, parallel
 Synopsis:       A crude interface between Haskell and Unix-like operating systems
 ghc-options:	-fglasgow-exts -O2 -fasm
 Exposed-modules:
