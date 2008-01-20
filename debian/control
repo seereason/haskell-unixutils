@@ -19,7 +19,7 @@ Description: A crude interface between Haskell and Unix-like operating systems
 Package: libghc6-unixutils-prof
 Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}
+Depends: ${haskell:Depends}, libghc6-unixutils-dev
 Description: A crude interface between Haskell and Unix-like operating systems
  Includes functions for mount, umounting, kill processes, safe
  recursive deletes, and more.
