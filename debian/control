@@ -2,7 +2,7 @@ Source: haskell-unixutils
 Priority: optional
 Section: devel
 Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
-Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.5.15), ghc6 (>=6.4), ghc6-prof, libghc6-regex-compat-dev, libghc6-regex-compat-prof, libghc6-regex-compat-doc, libghc6-parallel-dev, libghc6-parallel-prof, libghc6-parallel-doc
+Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.6.6), ghc6 (>=6.4), ghc6-prof, libghc6-regex-compat-dev, libghc6-regex-compat-prof, libghc6-regex-compat-doc, libghc6-parallel-dev, libghc6-parallel-prof, libghc6-parallel-doc
 Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc
 Standards-Version: 3.7.2.0
 
@@ -26,16 +26,6 @@ Description: A crude interface between Haskell and Unix-like operating systems
  .
  This package contains the libraries compiled for GHC 6 with profiling
  enabled.
-
-Package: libhugs-unixutils
-Section: libdevel
-Architecture: all
-Depends: ${haskell:Depends}
-Description:  A crude interface between Haskell and Unix-like operating systems
- Includes functions for mount, umounting, kill processes, safe
- recursive deletes, and more.
- .
- This package contains the libraries compiled for Hugs.
 
 Package: haskell-unixutils-doc
 Section: doc
