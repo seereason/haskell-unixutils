@@ -9,7 +9,7 @@ Standards-Version: 3.7.2.0
 Package: libghc6-unixutils-dev
 Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}
+Depends: ${haskell:Depends}, libghc6-regex-compat-dev, libghc6-parallel-dev
 Description: A crude interface between Haskell and Unix-like operating systems
  Includes functions for mount, umounting, kill processes, safe
  recursive deletes, and more.
@@ -19,7 +19,7 @@ Description: A crude interface between Haskell and Unix-like operating systems
 Package: libghc6-unixutils-prof
 Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}, libghc6-unixutils-dev
+Depends: ${haskell:Depends}, libghc6-unixutils-dev, libghc6-regex-compat-prof, libghc6-parallel-prof
 Description: A crude interface between Haskell and Unix-like operating systems
  Includes functions for mount, umounting, kill processes, safe
  recursive deletes, and more.
