@@ -10,7 +10,7 @@ ghc-options:	-fglasgow-exts -O2 -fasm
 Exposed-modules:
         Linspire.Unix.Directory, Linspire.Unix.FilePath, Linspire.Unix.List,
 	Linspire.Unix.Misc, Linspire.Unix.Mount, Linspire.Unix.Process,
-	Linspire.Unix.Progress, Linspire.Unix.SpecialDevice
+	Linspire.Unix.Progress, Linspire.Unix.SpecialDevice, Linspire.Unix.Files
 
 -- For more complex build options see:
 -- http://www.haskell.org/ghc/docs/latest/html/Cabal/
