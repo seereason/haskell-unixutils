@@ -9,6 +9,6 @@ forceSymbolicLink :: FilePath -> FilePath -> IO ()
 forceSymbolicLink target linkName =
     createSymbolicLink target linkName `catch`
       (\e -> if isAlreadyExistsError e 
-             then do removeLink target
+             then do removeLink linkName
                      createSymbolicLink target linkName
              else ioError e)
