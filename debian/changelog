@@ -1,3 +1,9 @@
+haskell-unixutils (1.14) unstable; urgency=low
+
+  * Added forceSymbolicLink
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Wed, 30 Jan 2008 10:59:42 -0800
+
 haskell-unixutils (1.13) unstable; urgency=low
 
   * Add missing dependencies.
