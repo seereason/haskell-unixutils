@@ -1,3 +1,9 @@
+haskell-unixutils (1.15) unstable; urgency=low
+
+  * Build dependency name changes: libghc6-regex-compat-doc -> haskell-regex-compat-doc
+
+ -- David Fox <dsf@seereason.com>  Thu, 07 Feb 2008 05:41:44 -0800
+
 haskell-unixutils (1.14) unstable; urgency=low
 
   * Added forceSymbolicLink
