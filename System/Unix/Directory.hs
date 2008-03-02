@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Linspire.Unix.Directory
+module System.Unix.Directory
     ( find
     , removeRecursiveSafely
     , unmountRecursiveSafely

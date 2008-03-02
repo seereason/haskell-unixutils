@@ -1,5 +1,5 @@
 -- |functions for mounting, umounting, parsing \/proc\/mounts, etc
-module Linspire.Unix.Mount 
+module System.Unix.Mount 
     (umountBelow,	-- FilePath -> IO [(FilePath, (String, String, ExitCode))]
      umount,		-- [String] -> IO (String, String, ExitCode)
      isMountPoint)	-- FilePath -> IO Bool
@@ -15,7 +15,7 @@ import System.Posix.Files
 
 -- Local Modules
 
-import Linspire.Unix.Process
+import System.Unix.Process
 
 -- |'umountBelow' - unmounts all mount points below /belowPath/
 -- \/proc\/mounts must be present and readable.  Because of the way

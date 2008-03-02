@@ -1,4 +1,4 @@
-module Linspire.Unix.Files where
+module System.Unix.Files where
 
 import System.Posix.Files
 import System.IO.Error

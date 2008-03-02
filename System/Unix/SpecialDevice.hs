@@ -1,7 +1,7 @@
 -- | Construct an ADT representing block and character devices
 -- (but mostly block devices) by interpreting the contents of
 -- the Linux sysfs filesystem.
-module Linspire.Unix.SpecialDevice 
+module System.Unix.SpecialDevice 
     (SpecialDevice,
      sysMountPoint,	-- IO String
      ofNode,		-- FilePath -> IO (Maybe SpecialDevice)

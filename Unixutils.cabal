@@ -1,5 +1,5 @@
 Name:           Unixutils
-Version:        1.14
+Version:        1.16
 License:        BSD3
 -- License-File:	debian/copyright
 Author:         Jack Donaldson
@@ -8,9 +8,9 @@ Build-Depends:  base, unix, regex-compat, process, bytestring, directory, old-ti
 Synopsis:       A crude interface between Haskell and Unix-like operating systems
 ghc-options:	-fglasgow-exts -O2 -fasm
 Exposed-modules:
-        Linspire.Unix.Directory, Linspire.Unix.FilePath, Linspire.Unix.List,
-	Linspire.Unix.Misc, Linspire.Unix.Mount, Linspire.Unix.Process,
-	Linspire.Unix.Progress, Linspire.Unix.SpecialDevice, Linspire.Unix.Files
+        System.Unix.Directory, System.Unix.FilePath, System.Unix.List,
+	System.Unix.Misc, System.Unix.Mount, System.Unix.Process,
+	System.Unix.Progress, System.Unix.SpecialDevice, System.Unix.Files
 
 -- For more complex build options see:
 -- http://www.haskell.org/ghc/docs/latest/html/Cabal/

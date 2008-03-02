@@ -1,7 +1,7 @@
 -- |Run shell commands with various types of progress reporting.
 --
 -- Author: David Fox
-module Linspire.Unix.Progress
+module System.Unix.Progress
     (
      systemTask, 	-- [Style] -> String -> IO TimeDiff
      otherTask,		-- [Style] -> IO a -> IO a

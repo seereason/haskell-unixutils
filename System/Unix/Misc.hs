@@ -1,7 +1,7 @@
 -- |Wrappers around some handy unix shell commands.  Please let
 -- me know if you think of better module names to hold these
 -- functions.  -dsf
-module Linspire.Unix.Misc
+module System.Unix.Misc
     ( md5sum
     , gzip)
     where
@@ -14,7 +14,7 @@ import System.Exit
 import System.IO
 import System.Posix.Files
 import System.Process
-import Linspire.Unix.Process
+import System.Unix.Process
 
 md5sum :: FilePath -> IO String
 md5sum path =

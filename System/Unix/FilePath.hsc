@@ -2,7 +2,7 @@
 -- | The function splitFileName is taken from missingh, at the moment
 -- missingh will not build under sid.
 
-module Linspire.Unix.FilePath 
+module System.Unix.FilePath 
     (dirName,
      baseName,
      (+/+),

@@ -1,5 +1,5 @@
 -- |functions for killing processes, running processes, etc
-module Linspire.Unix.Process
+module System.Unix.Process
     (
     -- * Strict process running
       simpleProcess	-- FilePath -> [String] -> IO (String, String, ExitCode)
@@ -18,6 +18,16 @@ module Linspire.Unix.Process
     , stdoutOnly	-- [Output] -> [B.ByteString]
     , stderrOnly	-- [Output] -> [B.ByteString]
     , outputOnly	-- [Output] -> [B.ByteString]
+    , checkResult
+    , discardStdout
+    , discardStderr
+    , discardOutput
+    , mergeToStderr
+    , mergeToStdout
+    , collectStdout
+    , collectStderr
+    , collectOutput
+    , collectOutputUnpacked
     , ExitCode(ExitSuccess, ExitFailure)
     , exitCodeOnly	-- [Output] -> [ExitCode]
     , hPutNonBlocking	-- Handle -> B.ByteString -> IO Int
@@ -29,7 +39,8 @@ import Control.Monad
 import Control.Exception hiding (catch)
 import Control.Parallel.Strategies
 import Data.Char
-import qualified Data.ByteString as B
+--import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List
 import Data.Word
@@ -149,6 +160,7 @@ data Output
     = Stdout B.ByteString
     | Stderr B.ByteString
     | Result ExitCode
+      deriving Show
 
 -- | Display up to thirty characters of a ByteString followed by an
 -- ellipsis if some of it was omitted.
@@ -158,6 +170,7 @@ showBrief s =
     show (B.take (min 30 l) s) ++
          if l > 30 then " ... (" ++ show (l - 30) ++ " additional bytes)" else ""
 
+{-
 instance Show Output where
     show (Stdout s) =
         let l = B.length s in
@@ -167,12 +180,13 @@ instance Show Output where
         "Stderr: " ++ showBrief s
     -- show (Sleep n) = "Slept " ++ show n ++ " usec"
     show (Result e) = show e
+-}
 
 bufSize = 65536		-- maximum chunk size
 uSecs = 8		-- minimum wait time, doubles each time nothing is ready
 maxUSecs = 100000	-- maximum wait time (microseconds)
 
-stringToByteString = B.pack . map (fromInteger . toInteger . ord)
+--stringToByteString = B.pack . map (fromInteger . toInteger . ord)
 
 -- | Debugging output
 ePut :: Int -> String -> IO ()
@@ -319,3 +333,69 @@ hPutNonBlocking h b =
 --
 -- > lazyCommand "yes" [] >>= return . stdoutOnly >>= lazyCommand "cat -n" >>= mapM_ (putStrLn . show)
 
+
+checkResult :: (Int -> a) -> a -> [Output] -> a
+checkResult _ _ [] = error $ "*** FAILURE: Missing exit code"
+checkResult _ onSuccess (Result ExitSuccess : _) = onSuccess
+checkResult onFailure _ (Result (ExitFailure n) : _) = onFailure n
+checkResult onFailure onSuccess (_ : more) = checkResult onFailure onSuccess more
+
+discardStdout :: [Output] -> [Output]
+discardStdout (Stdout _ : more) = discardStdout more
+discardStdout (x : more) = x : discardStdout more
+discardStdout [] = []
+
+discardStderr :: [Output] -> [Output]
+discardStderr (Stderr _ : more) = discardStderr more
+discardStderr (x : more) = x : discardStderr more
+discardStderr [] = []
+
+discardOutput :: [Output] -> [Output]
+discardOutput = discardStdout . discardStderr
+
+-- |Turn all the Stdout text into Stderr, preserving the order.
+mergeToStderr :: [Output] -> [Output]
+mergeToStderr output =
+    map merge output
+    where
+      merge (Stdout s) = Stderr s
+      merge x = x
+
+-- |Turn all the Stderr text into Stdout, preserving the order.
+mergeToStdout :: [Output] -> [Output]
+mergeToStdout output =
+    map merge output
+    where
+      merge (Stderr s) = Stdout s
+      merge x = x
+
+-- |Split out and concatenate Stdout
+collectStdout :: [Output] -> ([B.ByteString], [Output])
+collectStdout output =
+    foldr collect ([], []) output
+    where
+      collect (Stdout s) (text, result) = (s : text, result)
+      collect x (text, result) = (text, x : result)
+
+-- |Split out and concatenate Stderr
+collectStderr :: [Output] -> ([B.ByteString], [Output])
+collectStderr output =
+    foldr collect ([], []) output
+    where
+      collect (Stderr s) (text, result) = (s : text, result)
+      collect x (text, result) = (text, x : result)
+
+-- |Split out and concatenate both Stdout and Stderr, leaving only the exit code.
+collectOutput :: [Output] -> ([B.ByteString], [B.ByteString], [ExitCode])
+collectOutput output =
+    foldr collect ([], [], []) output
+    where
+      collect (Stdout s) (out, err, result) = (s : out, err, result)
+      collect (Stderr s) (out, err, result) = (out, s : err, result)
+      collect (Result r) (out, err, result) = (out, err, r : result)
+
+-- |Collect all output, unpack and concatenate.
+collectOutputUnpacked :: [Output] -> (String, String, [ExitCode])
+collectOutputUnpacked =
+    unpack . collectOutput
+    where unpack (out, err, result) = (B.unpack (B.concat out), B.unpack (B.concat err), result)

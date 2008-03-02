@@ -1,3 +1,12 @@
+haskell-unixutils (1.16) unstable; urgency=low
+
+  * Rename Linspire.Unix modules to System.Unix.  Not sure if this is
+    the best choice, but it seems better.
+  * Move some functions from haskell-debian to Unix.Process.
+  * Add the TIO module from haskell-debian.
+
+ -- David Fox <dsf@seereason.com>  Sun, 02 Mar 2008 09:37:16 -0800
+
 haskell-unixutils (1.15) unstable; urgency=low
 
   * Build dependency name changes: libghc6-regex-compat-doc -> haskell-regex-compat-doc

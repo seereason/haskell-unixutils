@@ -1,7 +1,7 @@
 -- | A function taken From missingh, which will not build under
 -- sid at the moment.
 
-module Linspire.Unix.List
+module System.Unix.List
     (join,
      consperse)
     where
