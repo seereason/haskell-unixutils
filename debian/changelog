@@ -1,3 +1,9 @@
+haskell-unixutils (1.17) unstable; urgency=low
+
+  * Modify System.Unix.Process to use lazy ByteStrings.
+
+ -- David Fox <dsf@seereason.com>  Sun, 04 May 2008 11:18:15 -0700
+
 haskell-unixutils (1.16) unstable; urgency=low
 
   * Rename Linspire.Unix modules to System.Unix.  Not sure if this is

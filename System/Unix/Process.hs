@@ -11,13 +11,13 @@ module System.Unix.Process
     -- * Lazy process running
     , Process
     , Output(Stdout, Stderr, Result)
-    , lazyRun		-- [B.ByteString] -> Process -> IO [Output]
+    , lazyRun		-- L.ByteString -> Process -> IO [Output]
     , lazyCommand	-- String -> IO [Output]
     , lazyProcess	-- FilePath -> [String] -> Maybe FilePath
 			--     -> Maybe [(String, String)] -> IO [Output]
-    , stdoutOnly	-- [Output] -> [B.ByteString]
-    , stderrOnly	-- [Output] -> [B.ByteString]
-    , outputOnly	-- [Output] -> [B.ByteString]
+    , stdoutOnly	-- [Output] -> L.ByteString
+    , stderrOnly	-- [Output] -> L.ByteString
+    , outputOnly	-- [Output] -> L.ByteString
     , checkResult
     , discardStdout
     , discardStderr
@@ -39,11 +39,15 @@ import Control.Monad
 import Control.Exception hiding (catch)
 import Control.Parallel.Strategies
 import Data.Char
---import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString as B
+--import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Lazy.Char8 as L
+--import qualified Data.ByteString.Internal as I
 import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List
 import Data.Word
+import Data.Int
 import System.Process
 import System.IO
 import System.IO.Unsafe
@@ -199,21 +203,21 @@ ePut2 = ePut 2
 curv = 0
 
 -- | Create a process with 'runInteractiveCommand' and run it with 'lazyRun'.
-lazyCommand :: String -> [B.ByteString] -> IO [Output]
+lazyCommand :: String -> L.ByteString -> IO [Output]
 lazyCommand cmd input = runInteractiveCommand cmd >>= lazyRun input
 
 -- | Create a process with 'runInteractiveProcess' and run it with 'lazyRun'.
 lazyProcess :: FilePath -> [String] -> Maybe FilePath
-            -> Maybe [(String, String)] -> [B.ByteString] -> IO [Output]
+            -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
 lazyProcess exec args cwd env input =
     runInteractiveProcess exec args cwd env >>= lazyRun input
 
 -- | Take the tuple like that returned by 'runInteractiveProcess',
 -- create a process, send the list of inputs to its stdin and return
 -- the lazy list of 'Output' objects.
-lazyRun :: [B.ByteString] -> Process -> IO [Output]
+lazyRun :: L.ByteString -> Process -> IO [Output]
 lazyRun input (inh, outh, errh, pid) =
-    elements (input, Just inh, Just outh, Just errh, [])
+    elements (L.toChunks input, Just inh, Just outh, Just errh, [])
     where
       elements :: ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output]) -> IO [Output]
       -- EOF on both output descriptors, get exit code
@@ -258,7 +262,7 @@ ready waitUSecs (input, inh, outh, errh, elems) =
             | input == B.empty -> ready waitUSecs (etc, inh, outh, errh, elems)
             -- Send some input to the process
             | True ->
-                do count' <- hPutNonBlocking handle input
+                do count' <- hPutNonBlocking handle input >>= return . fromInteger . toInteger
                    case count' of
                      -- Input buffer is full too, sleep.
                      0 -> do usleep uSecs
@@ -289,23 +293,33 @@ nextOut (Just handle) True constructor =	-- Perform a read
         n -> return ([constructor a], Just handle)
 
 -- | Filter everything except stdout from the output list.
-stdoutOnly :: [Output] -> [B.ByteString]
-stdoutOnly (Stdout s : etc) = s : stdoutOnly etc
-stdoutOnly (_ : etc) = stdoutOnly etc
-stdoutOnly [] = []
+stdoutOnly :: [Output] -> L.ByteString
+stdoutOnly out =
+    L.fromChunks $ f out
+    where 
+      f (Stdout s : etc) = s : f etc
+      f (_ : etc) = f etc
+      f [] = []
 
 -- | Filter everything except stderr from the output list.
-stderrOnly :: [Output] -> [B.ByteString]
-stderrOnly (Stderr s : etc) = s : stderrOnly etc
-stderrOnly (_ : etc) = stderrOnly etc
-stderrOnly [] = []
+stderrOnly :: [Output] -> L.ByteString
+stderrOnly out =
+    L.fromChunks $ f out
+    where
+      f (Stderr s : etc) = s : f etc
+      f (_ : etc) = f etc
+      f [] = []
 
--- | Filter everything except stderr from the output list.
-outputOnly :: [Output] -> [B.ByteString]
-outputOnly (Stderr s : etc) = s : outputOnly etc
-outputOnly (Stdout s : etc) = s : outputOnly etc
-outputOnly (_ : etc) = outputOnly etc
-outputOnly [] = []
+-- | Filter the exit codes output list and merge the two output
+-- streams in the order they appear.
+outputOnly :: [Output] -> L.ByteString
+outputOnly out =
+    L.fromChunks $ f out
+    where
+      f (Stderr s : etc) = s : f etc
+      f (Stdout s : etc) = s : f etc
+      f (_ : etc) = f etc
+      f [] = []
 
 -- | Filter everything except the exit code from the output list.
 exitCodeOnly :: [Output] -> [ExitCode]
@@ -315,11 +329,11 @@ exitCodeOnly [] = []
 
 -- | This belongs in Data.ByteString.  See ticket 1070,
 -- <http://hackage.haskell.org/trac/ghc/ticket/1070>.
-hPutNonBlocking :: Handle -> B.ByteString -> IO Int
+hPutNonBlocking :: Handle -> B.ByteString -> IO Int64
 hPutNonBlocking h b =
     case toForeignPtr b of
       (_, _, 0) -> return 0
-      (ps, s, l) -> withForeignPtr ps $ \ p-> hPutBufNonBlocking h (p `plusPtr` s) l
+      (ps, s, l) -> withForeignPtr ps $ \ p-> hPutBufNonBlocking h (p `plusPtr` s) l >>= return . fromInteger . toInteger
 
 -- Examples:
 --
@@ -370,26 +384,29 @@ mergeToStdout output =
       merge x = x
 
 -- |Split out and concatenate Stdout
-collectStdout :: [Output] -> ([B.ByteString], [Output])
+collectStdout :: [Output] -> (L.ByteString, [Output])
 collectStdout output =
-    foldr collect ([], []) output
+    (L.fromChunks out, other)
     where
+      (out, other) = foldr collect ([], []) output
       collect (Stdout s) (text, result) = (s : text, result)
       collect x (text, result) = (text, x : result)
 
 -- |Split out and concatenate Stderr
-collectStderr :: [Output] -> ([B.ByteString], [Output])
+collectStderr :: [Output] -> (L.ByteString, [Output])
 collectStderr output =
-    foldr collect ([], []) output
+    (L.fromChunks err, other)
     where
+      (err, other) = foldr collect ([], []) output
       collect (Stderr s) (text, result) = (s : text, result)
       collect x (text, result) = (text, x : result)
 
 -- |Split out and concatenate both Stdout and Stderr, leaving only the exit code.
-collectOutput :: [Output] -> ([B.ByteString], [B.ByteString], [ExitCode])
+collectOutput :: [Output] -> (L.ByteString, L.ByteString, [ExitCode])
 collectOutput output =
-    foldr collect ([], [], []) output
+    (L.fromChunks out, L.fromChunks err, code)
     where
+      (out, err, code) = foldr collect ([], [], []) output
       collect (Stdout s) (out, err, result) = (s : out, err, result)
       collect (Stderr s) (out, err, result) = (out, s : err, result)
       collect (Result r) (out, err, result) = (out, err, r : result)
@@ -398,4 +415,4 @@ collectOutput output =
 collectOutputUnpacked :: [Output] -> (String, String, [ExitCode])
 collectOutputUnpacked =
     unpack . collectOutput
-    where unpack (out, err, result) = (B.unpack (B.concat out), B.unpack (B.concat err), result)
+    where unpack (out, err, result) = (L.unpack out, L.unpack err, result)
