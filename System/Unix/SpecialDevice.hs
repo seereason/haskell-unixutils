@@ -42,6 +42,7 @@ import System.Directory
 import Data.Char
 import Data.List
 import Data.Maybe
+import System.FilePath
 import System.Posix.Types
 import System.Posix.Files
 import System.Posix.User
@@ -217,7 +218,7 @@ directory_find follow path =
                     -- Catch the exception thrown if we lack read permission
                     subs <- (try $ getDirectoryContents path) >>=
                             return . either (const []) id >>=
-                            return . map ((path ++ "/") ++) . filter (not . flip elem [".", ".."]) >>=
+                            return . map (path </>) . filter (not . flip elem [".", ".."]) >>=
                             mapM (directory_find follow) >>=
                             return . concat
                     return $ (path, status) : subs

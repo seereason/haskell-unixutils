@@ -15,6 +15,7 @@ import Data.List (isSuffixOf)
 import System.Cmd
 import System.Directory
 import System.Exit
+import System.FilePath
 import System.IO
 import System.Posix.Files
 import System.Posix.Types
@@ -30,7 +31,7 @@ find path =
         True -> 
             do
               subs <- getDirectoryContents path >>=
-                      return . map ((path ++ "/") ++) . filter (not . flip elem [".", ".."]) >>=
+                      return . map (path </>) . filter (not . flip elem [".", ".."]) >>=
                       mapM find >>=
                       return . concat
               return $ (path, status) : subs
@@ -64,7 +65,7 @@ traverse path f d m =
           error ("Couldn't unmount file system on " ++ path)
       doDirectoryFile tries status path name =
           do
-            let child = path ++ "/" ++ name
+            let child = path </> name
             childStatus <- getSymbolicLinkStatus child
             if deviceID status == deviceID childStatus then
                 doPath child childStatus else
@@ -144,7 +145,7 @@ withWorkingDirectory dir action =
 withTemporaryDirectory :: FilePath -> (FilePath -> IO a) -> IO a
 withTemporaryDirectory fp f =
      do sysTmpDir <- getTemporaryDirectory
-        bracket (mkdtemp (sysTmpDir ++ "/" ++ fp))
+        bracket (mkdtemp (sysTmpDir </> fp))
                 removeRecursiveSafely
                 f
 

@@ -5,7 +5,6 @@
 module System.Unix.FilePath 
     (dirName,
      baseName,
-     (+/+),
      realpath,
      -- * From MissingH
      splitFileName)
@@ -18,16 +17,6 @@ import Foreign.Marshal.Array
 
 #include <limits.h>
 #include <stdlib.h>
-
-(+/+) :: FilePath -> FilePath -> FilePath
-(+/+) path1 "" = path1
-(+/+) "" path2 = path2
-(+/+) path1 path2 =
-    case (head (reverse path1), head path2) of
-      ('/', '/') -> path1 ++ drop 1 path2
-      (_, '/') -> path1 ++ path2
-      ('/', _) -> path1 ++ path2
-      (_, _) -> path1 ++ "/" ++ path2
 
 dirName :: FilePath -> FilePath
 dirName path = fst (splitFileName path)
