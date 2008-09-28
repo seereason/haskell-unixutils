@@ -1,3 +1,9 @@
+haskell-unixutils (1.18) unstable; urgency=low
+
+  * Use System.FilePath, the standard filepath module.
+
+ -- David Fox <dsf@seereason.com>  Sun, 28 Sep 2008 07:30:07 -0700
+
 haskell-unixutils (1.17) unstable; urgency=low
 
   * Modify System.Unix.Process to use lazy ByteStrings.
