@@ -10,6 +10,7 @@ module System.Unix.FilePath
     where
 
 import Data.List
+import System.FilePath (takeFileName, dropFileName)
 import Text.Regex
 import Foreign.C
 import Foreign.Marshal.Array
