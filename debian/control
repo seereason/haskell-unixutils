@@ -1,20 +1,10 @@
 Source: haskell-unixutils
 Priority: optional
-Section: misc
-Maintainer: David Fox <dsf@seereason.com>
-Build-Depends: debhelper (>= 5.0),
-               haskell-devscripts-cdbs,
-               cabal-debian (>= 0.7),
-               ghc6 (>= 6.8),
-               ghc6-doc,
-               haddock,
-               ghc6-prof,
-               libghc6-parallel-prof,
-               libghc6-parallel-doc,
-               libghc6-regex-compat-prof,
-               libghc6-regex-compat-doc
-Standards-Version: 3.7.2.2
-Homepage: http://src.seereason.com/haskell-unixutils
+Section: devel
+Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
+Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.6.6), ghc6 (>=6.4), ghc6-prof, libghc6-regex-compat-dev, libghc6-regex-compat-prof, libghc6-parallel-dev, libghc6-parallel-prof
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-regex-compat-doc, libghc6-parallel-doc
+Standards-Version: 3.7.2.0
 
 Package: libghc6-unixutils-dev
 Architecture: any
