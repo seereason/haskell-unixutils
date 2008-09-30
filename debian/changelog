@@ -1,3 +1,10 @@
+haskell-unixutils (1.19) unstable; urgency=low
+
+  * Remove splitFilePath in favor of function in System.FilePath,
+    add <++> to replace old +/+.
+
+ -- David Fox <dsf@seereason.com>  Tue, 30 Sep 2008 08:29:33 -0700
+
 haskell-unixutils (1.18) unstable; urgency=low
 
   * Use System.FilePath, the standard filepath module.
