@@ -1,3 +1,9 @@
+haskell-unixutils (1.20) unstable; urgency=low
+
+  * Re-debianize using cabal-debian
+
+ -- David Fox <dsf@seereason.com>  Thu, 15 Jan 2009 23:29:52 -0800
+
 haskell-unixutils (1.19) unstable; urgency=low
 
   * Remove splitFilePath in favor of function in System.FilePath,

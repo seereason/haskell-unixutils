@@ -1,38 +1,56 @@
 Source: haskell-unixutils
 Priority: optional
-Section: devel
-Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
-Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.6.6), ghc6 (>=6.4), ghc6-prof, libghc6-regex-compat-dev, libghc6-regex-compat-prof, libghc6-parallel-dev, libghc6-parallel-prof
-Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-regex-compat-doc, libghc6-parallel-doc
-Standards-Version: 3.7.2.0
+Section: misc
+Maintainer: David Fox <dsf@seereason.com>
+Build-Depends: debhelper (>= 5.0),
+               haskell-devscripts-cdbs,
+               cabal-debian (>= 0.7),
+               ghc6 (>= 6.8),
+               ghc6-doc,
+               haddock,
+               ghc6-prof,
+               libghc6-parallel-prof,
+               libghc6-parallel-doc,
+               libghc6-regex-compat-prof,
+               libghc6-regex-compat-doc
+Standards-Version: 3.7.2.2
+Homepage: http://src.seereason.com/haskell-unixutils
 
 Package: libghc6-unixutils-dev
-Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}, libghc6-regex-compat-dev, libghc6-parallel-dev
+Section: libdevel
+Depends: ${haskell:Depends}
 Description: A crude interface between Haskell and Unix-like operating systems
- Includes functions for mount, umounting, kill processes, safe
- recursive deletes, and more.
- .
- This package contains the libraries compiled for GHC 6.
+  A collection of useful and mildly useful functions that you might
+  expect to find in System.* which a heavy bias towards Unix-type operating systems.
+  .
+  Author: Jeremy Shaw, David Fox
+  Upstream-Maintainer: jeremy@seereason.com
+  .
+  This package contains the normal library files.
 
 Package: libghc6-unixutils-prof
-Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}, libghc6-unixutils-dev, libghc6-regex-compat-prof, libghc6-parallel-prof
+Section: libdevel
+Depends: ${haskell:Depends}
 Description: A crude interface between Haskell and Unix-like operating systems
- Includes functions for mount, umounting, kill processes, safe
- recursive deletes, and more.
- .
- This package contains the libraries compiled for GHC 6 with profiling
- enabled.
+  A collection of useful and mildly useful functions that you might
+  expect to find in System.* which a heavy bias towards Unix-type operating systems.
+  .
+  Author: Jeremy Shaw, David Fox
+  Upstream-Maintainer: jeremy@seereason.com
+  .
+  This package contains the libraries compiled with profiling enabled.
 
 Package: libghc6-unixutils-doc
-Section: doc
 Architecture: any
-Depends: ghc6-doc, libghc6-base-doc
-Description:  A crude interface between Haskell and Unix-like operating systems
- Includes functions for mount, umounting, kill processes, safe
- recursive deletes, and more
- .
- This package contains the documentation.
+Section: libdevel
+Depends: ${haskell:Depends}
+Description: A crude interface between Haskell and Unix-like operating systems
+  A collection of useful and mildly useful functions that you might
+  expect to find in System.* which a heavy bias towards Unix-type operating systems.
+  .
+  Author: David Fox
+  Upstream-Maintainer: jeremy@seereason.com
+  .
+  This package contains the documentation files.
