@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- |functions for killing processes, running processes, etc
 module System.Unix.Process
     (
@@ -233,6 +234,13 @@ lazyRun input (inh, outh, errh, pid) =
             etc <- unsafeInterleaveIO (elements (input, inh, outh, errh, []))
             return $ elems ++ etc
 
+-- A quick fix for the issue where hWaitForInput has actually started
+-- raising the isEOFError exception in ghc 6.10.
+data Readyness = Ready | Unready | EndOfFile
+
+hReady' :: Handle -> IO Readyness
+hReady' h = (hReady h >>= (\ flag -> return (if flag then Ready else Unready))) `catch` (\ e -> return EndOfFile)
+
 -- | Wait until at least one handle is ready and then write input or
 -- read output.  Note that there is no way to check whether the input
 -- handle is ready except to try to write to it and see if any bytes
@@ -243,21 +251,21 @@ ready :: Int -> ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Outp
       -> IO ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output])
 ready waitUSecs (input, inh, outh, errh, elems) =
     do
-      outReady <- maybe (return False) hReady outh
-      errReady <- maybe (return False) hReady errh
+      outReady <- maybe (return Unready) hReady' outh
+      errReady <- maybe (return Unready) hReady' errh
       case (input, inh, outReady, errReady) of
         -- Input exhausted, close the input handle.
-        ([], Just handle, False, False) ->
+        ([], Just handle, Unready, Unready) ->
             do hClose handle
                ready  waitUSecs ([], Nothing, outh, errh, elems)
         -- Input handle closed and there are no ready output handles,
         -- wait a bit
-        ([], Nothing, False, False) ->
+        ([], Nothing, Unready, Unready) ->
             do usleep uSecs
                --ePut0 ("Slept " ++ show uSecs ++ " microseconds\n")
                ready (min maxUSecs (2 * waitUSecs)) (input, inh, outh, errh, elems)
         -- Input is available and there are no ready output handles
-        (input : etc, Just handle, False, False)
+        (input : etc, Just handle, Unready, Unready)
             -- Discard a zero byte input
             | input == B.empty -> ready waitUSecs (etc, inh, outh, errh, elems)
             -- Send some input to the process
@@ -278,10 +286,11 @@ ready waitUSecs (input, inh, outh, errh, elems) =
 
 -- | Return the next output element and the updated handle
 -- from a handle which is assumed ready.
-nextOut :: (Maybe Handle) -> Bool -> (B.ByteString -> Output) -> IO ([Output], Maybe Handle)
+nextOut :: (Maybe Handle) -> Readyness -> (B.ByteString -> Output) -> IO ([Output], Maybe Handle)
 nextOut Nothing _ _ = return ([], Nothing)	-- Handle is closed
-nextOut handle False _ = return ([], handle)	-- Handle is not ready
-nextOut (Just handle) True constructor =	-- Perform a read 
+nextOut _ EndOfFile _ = return ([], Nothing)	-- Handle is closed
+nextOut handle Unready _ = return ([], handle)	-- Handle is not ready
+nextOut (Just handle) Ready constructor =	-- Perform a read 
     do
       a <- B.hGetNonBlocking handle bufSize
       case B.length a of
