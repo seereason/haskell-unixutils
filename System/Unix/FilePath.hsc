@@ -1,5 +1,4 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# DEPRECATED baseName, dirName "Use System.FilePath.takeFileName for baseName,  System.FilePath.dropFileName for dirName  #-}
 
 -- | The function splitFileName is taken from missingh, at the moment
 -- missingh will not build under sid.
