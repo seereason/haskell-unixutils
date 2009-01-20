@@ -1,3 +1,10 @@
+haskell-unixutils (1.21) unstable; urgency=low
+
+  * In ghc 6.10.1 the hWaitForInput function raises isEOFError, modify lazyRun
+    to expect this.
+
+ -- David Fox <dsf@seereason.com>  Sun, 18 Jan 2009 07:32:26 -0800
+
 haskell-unixutils (1.20) unstable; urgency=low
 
   * Re-debianize using cabal-debian
