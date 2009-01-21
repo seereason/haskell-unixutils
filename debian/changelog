@@ -1,3 +1,10 @@
+haskell-unixutils (1.22) unstable; urgency=low
+
+  * Use lazyCommand instead of readFile to read /proc/mounts to work
+    around http://hackage.haskell.org/trac/ghc/ticket/2971
+
+ -- David Fox <dsf@seereason.com>  Wed, 21 Jan 2009 09:25:54 -0800
+
 haskell-unixutils (1.21) unstable; urgency=low
 
   * In ghc 6.10.1 the hWaitForInput function raises isEOFError, modify lazyRun
