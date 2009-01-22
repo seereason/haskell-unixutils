@@ -1,7 +1,7 @@
 Name:           Unixutils
 Version:        1.22
 License:        BSD3
--- License-File:	debian/copyright
+License-File:	COPYING
 Author:         Jeremy Shaw
 Homepage:       http://src.seereason.com/haskell-unixutils
 Category:	System
