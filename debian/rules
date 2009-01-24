@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-include /usr/share/haskell-devscripts/hlibrary.mk
+include /usr/share/cdbs/1/rules/hlibrary.mk
 
 # How to install an extra file into the documentation package
 #binary-fixup/libghc6-Unixutils-doc::
