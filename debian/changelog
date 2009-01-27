@@ -1,3 +1,10 @@
+haskell-unixutils (1.23) unstable; urgency=low
+
+  * Remove local postinst and postrm scripts, we want to use the ones that
+    haskell-devscripts installs.
+
+ -- David Fox <dsf@seereason.com>  Tue, 27 Jan 2009 09:38:27 -0800
+
 haskell-unixutils (1.22) unstable; urgency=low
 
   * Use lazyCommand instead of readFile to read /proc/mounts to work
