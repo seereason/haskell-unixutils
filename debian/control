@@ -2,7 +2,7 @@ Source: haskell-unixutils
 Priority: optional
 Section: devel
 Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
-Build-Depends: debhelper (>= 4.0.0), haskell-cdbs, ghc6 (>=6.10), ghc6-prof, haddock, ghc6-doc
+Build-Depends: debhelper (>= 4.0.0), haskell-cdbs, haskell-devscripts, ghc6 (>=6.10), ghc6-prof, haddock, ghc6-doc
 Standards-Version: 3.7.2.0
 
 Package: libghc6-unixutils-dev
