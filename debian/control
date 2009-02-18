@@ -21,7 +21,7 @@ Description: A crude interface between Haskell and Unix-like operating systems
 Package: libghc6-unixutils-prof
 Architecture: any
 Section: libdevel
-Depends: ${haskell:Depends}
+Depends: ${haskell:Depends}, libghc6-unixutils-dev
 Description: A crude interface between Haskell and Unix-like operating systems
   A collection of useful and mildly useful functions that you might
   expect to find in System.* which a heavy bias towards Unix-type operating systems.
