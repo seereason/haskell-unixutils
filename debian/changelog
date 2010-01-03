@@ -1,3 +1,9 @@
+haskell-unixutils (1.24) unstable; urgency=low
+
+  * Changes to use base 4 instead of 3.
+
+ -- David Fox <dsf@seereason.com>  Sat, 02 Jan 2010 16:59:46 -0800
+
 haskell-unixutils (1.23) unstable; urgency=low
 
   * Remove local postinst and postrm scripts, we want to use the ones that

@@ -36,7 +36,7 @@ module System.Unix.SpecialDevice
     )
     where
 
-import Control.Exception
+import Control.OldException
 import System.IO
 import System.Directory
 import Data.Char

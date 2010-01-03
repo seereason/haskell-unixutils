@@ -10,7 +10,7 @@ module System.Unix.Directory
     )
     where
 
-import Control.Exception
+import Control.OldException
 import Data.List (isSuffixOf)
 import System.Cmd
 import System.Directory

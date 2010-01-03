@@ -27,7 +27,7 @@ module System.Unix.Progress
      fixedTimeDiffToString
     ) where
 
-import Control.Exception
+import Control.OldException
 import Data.List
 import System.Exit
 import System.IO
