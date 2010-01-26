@@ -261,7 +261,7 @@ ready waitUSecs (input, inh, outh, errh, elems) =
         -- Input handle closed and there are no ready output handles,
         -- wait a bit
         ([], Nothing, Unready, Unready) ->
-            do usleep uSecs
+            do usleep waitUSecs
                --ePut0 ("Slept " ++ show uSecs ++ " microseconds\n")
                ready (min maxUSecs (2 * waitUSecs)) (input, inh, outh, errh, elems)
         -- Input is available and there are no ready output handles
