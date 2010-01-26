@@ -2,6 +2,8 @@ haskell-unixutils (1.25) unstable; urgency=low
 
   * Call hSetBinaryMode on all the handles before reading to avoid errors
     from the Unicode decoder.
+  * Fix the wait interval, so we double the waiting period each time we
+    wait due to no file descriptors being ready, up to a limit of 100 ms.
 
  -- David Fox <dsf@seereason.com>  Tue, 26 Jan 2010 15:25:21 -0800
 
