@@ -100,6 +100,8 @@ killByCwd path =
 simpleProcess :: FilePath -> [String] -> IO (String, String, ExitCode)
 simpleProcess exec args =
     do (inp,out,err,pid) <- runInteractiveProcess exec args Nothing Nothing
+       hSetBinaryMode out True
+       hSetBinaryMode err True
        hClose inp
        outStr <- hGetContents out
        errStr <- hGetContents err
