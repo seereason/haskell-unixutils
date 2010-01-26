@@ -41,17 +41,15 @@ import Control.Exception hiding (catch)
 import Control.Parallel.Strategies
 import Data.Char
 import qualified Data.ByteString as B
---import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Char8 as C
-import qualified Data.ByteString.Lazy.Char8 as L
---import qualified Data.ByteString.Internal as I
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as C
 import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List
 import Data.Word
 import Data.Int
 import System.Process
-import System.IO
-import System.IO.Unsafe
+import System.IO (Handle, hSetBinaryMode, hReady, hPutStr, hPutStrLn, hPutBufNonBlocking, stderr, hClose, hGetContents)
+import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory
 import System.Exit
 import System.Posix.Files
@@ -218,6 +216,9 @@ lazyProcess exec args cwd env input =
 -- the lazy list of 'Output' objects.
 lazyRun :: L.ByteString -> Process -> IO [Output]
 lazyRun input (inh, outh, errh, pid) =
+    hSetBinaryMode inh True >>
+    hSetBinaryMode outh True >>
+    hSetBinaryMode errh True >>
     elements (L.toChunks input, Just inh, Just outh, Just errh, [])
     where
       elements :: ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output]) -> IO [Output]
@@ -424,4 +425,4 @@ collectOutput output =
 collectOutputUnpacked :: [Output] -> (String, String, [ExitCode])
 collectOutputUnpacked =
     unpack . collectOutput
-    where unpack (out, err, result) = (L.unpack out, L.unpack err, result)
+    where unpack (out, err, result) = (C.unpack out, C.unpack err, result)
