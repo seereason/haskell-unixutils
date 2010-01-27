@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures -Werror #-}
 -- |functions for killing processes, running processes, etc
 module System.Unix.Process
     (
@@ -36,28 +37,25 @@ module System.Unix.Process
     , killByCwd		-- FilePath -> IO [(String, Maybe String)]
     ) where
 
-import Control.Monad
+import Control.Monad (liftM, filterM)
 import Control.Exception hiding (catch)
-import Control.Parallel.Strategies
-import Data.Char
+import Control.Parallel.Strategies (rnf)
+import Data.Char (isDigit)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
-import Data.List
-import Data.Word
-import Data.Int
+import Data.List (isPrefixOf)
+import Data.Int (Int64)
 import qualified GHC.IO.Exception as E
-import System.Process
-import System.IO (Handle, hSetBinaryMode, hReady, hPutStr, hPutStrLn, hPutBufNonBlocking, stderr, hClose, hGetContents)
+import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess, runInteractiveCommand)
+import System.IO (Handle, hSetBinaryMode, hReady, hPutBufNonBlocking, hClose, hGetContents)
 import System.IO.Unsafe (unsafeInterleaveIO)
-import System.Directory
-import System.Exit
-import System.Posix.Files
-import System.Posix.Signals
+import System.Directory (getDirectoryContents)
+import System.Exit (ExitCode(ExitFailure, ExitSuccess))
+import System.Posix.Files (readSymbolicLink)
+import System.Posix.Signals (signalProcess, sigTERM)
 import System.Posix.Unistd (usleep)
-import Foreign.Marshal.Alloc (allocaBytes)
-import Foreign.Marshal.Array (peekArray, pokeArray)
 import Foreign.Ptr (plusPtr)			-- for hPutNonBlocking only
 import Foreign.ForeignPtr (withForeignPtr)	-- for hPutNonBlocking only
 
@@ -168,41 +166,9 @@ data Output
     | Result ExitCode
       deriving Show
 
--- | Display up to thirty characters of a ByteString followed by an
--- ellipsis if some of it was omitted.
-showBrief :: B.ByteString -> String
-showBrief s = 
-    let l = B.length s in
-    show (B.take (min 30 l) s) ++
-         if l > 30 then " ... (" ++ show (l - 30) ++ " additional bytes)" else ""
-
-{-
-instance Show Output where
-    show (Stdout s) =
-        let l = B.length s in
-        "Stdout: " ++ showBrief s
-    show (Stderr s) =
-        let l = B.length s in
-        "Stderr: " ++ showBrief s
-    -- show (Sleep n) = "Slept " ++ show n ++ " usec"
-    show (Result e) = show e
--}
-
 bufSize = 65536		-- maximum chunk size
 uSecs = 8		-- minimum wait time, doubles each time nothing is ready
 maxUSecs = 100000	-- maximum wait time (microseconds)
-
---stringToByteString = B.pack . map (fromInteger . toInteger . ord)
-
--- | Debugging output
-ePut :: Int -> String -> IO ()
-ePut minv s = if curv >= minv then hPutStr stderr s else return ()
-ePut0 = ePut 0
-ePut1 = ePut 1
-ePut2 = ePut 2
-
--- | Current verbosity level.
-curv = 0
 
 -- | Create a process with 'runInteractiveCommand' and run it with 'lazyRun'.
 lazyCommand :: String -> L.ByteString -> IO [Output]
@@ -283,8 +249,8 @@ ready waitUSecs (input, inh, outh, errh, elems) =
                      0 -> do usleep uSecs
                              ready (min maxUSecs (2 * waitUSecs)) (input : etc, inh, outh, errh, elems)
                      -- We wrote some input, discard it and continue
-                     n -> do let input' = B.drop count' input : etc
-                             return (input', Just handle, outh, errh, elems)
+                     _n -> do let input' = B.drop count' input : etc
+                              return (input', Just handle, outh, errh, elems)
         -- One or both output handles are ready, try to read from them
         _ ->
             do (out1, errh') <- nextOut errh errReady Stderr
@@ -306,7 +272,7 @@ nextOut (Just handle) Ready constructor =	-- Perform a read
         0 -> do hClose handle
                 return ([], Nothing)
         -- Got some input
-        n -> return ([constructor a], Just handle)
+        _n -> return ([constructor a], Just handle)
 
 -- | Filter everything except stdout from the output list.
 stdoutOnly :: [Output] -> L.ByteString
