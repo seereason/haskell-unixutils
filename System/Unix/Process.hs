@@ -47,6 +47,7 @@ import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List
 import Data.Word
 import Data.Int
+import qualified GHC.IO.Exception as E
 import System.Process
 import System.IO (Handle, hSetBinaryMode, hReady, hPutStr, hPutStrLn, hPutBufNonBlocking, stderr, hClose, hGetContents)
 import System.IO.Unsafe (unsafeInterleaveIO)
@@ -242,7 +243,10 @@ lazyRun input (inh, outh, errh, pid) =
 data Readyness = Ready | Unready | EndOfFile
 
 hReady' :: Handle -> IO Readyness
-hReady' h = (hReady h >>= (\ flag -> return (if flag then Ready else Unready))) `catch` (\ e -> return EndOfFile)
+hReady' h = (hReady h >>= (\ flag -> return (if flag then Ready else Unready))) `catch` (\ (e :: IOError) ->
+                                                                                             case E.ioe_type e of
+                                                                                               E.EOF -> return EndOfFile
+                                                                                               _ -> error (show e))
 
 -- | Wait until at least one handle is ready and then write input or
 -- read output.  Note that there is no way to check whether the input
