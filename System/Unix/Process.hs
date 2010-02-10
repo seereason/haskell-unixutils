@@ -37,6 +37,7 @@ module System.Unix.Process
     , killByCwd		-- FilePath -> IO [(String, Maybe String)]
     ) where
 
+import Control.Concurrent (threadDelay)
 import Control.Monad (liftM, filterM)
 import Control.Exception hiding (catch)
 import Control.Parallel.Strategies (rnf)
@@ -55,7 +56,7 @@ import System.Directory (getDirectoryContents)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.Posix.Files (readSymbolicLink)
 import System.Posix.Signals (signalProcess, sigTERM)
-import System.Posix.Unistd (usleep)
+
 import Foreign.Ptr (plusPtr)			-- for hPutNonBlocking only
 import Foreign.ForeignPtr (withForeignPtr)	-- for hPutNonBlocking only
 
@@ -234,7 +235,7 @@ ready waitUSecs (input, inh, outh, errh, elems) =
         -- Input handle closed and there are no ready output handles,
         -- wait a bit
         ([], Nothing, Unready, Unready) ->
-            do usleep waitUSecs
+            do threadDelay waitUSecs
                --ePut0 ("Slept " ++ show uSecs ++ " microseconds\n")
                ready (min maxUSecs (2 * waitUSecs)) (input, inh, outh, errh, elems)
         -- Input is available and there are no ready output handles
@@ -246,7 +247,7 @@ ready waitUSecs (input, inh, outh, errh, elems) =
                 do count' <- hPutNonBlocking handle input >>= return . fromInteger . toInteger
                    case count' of
                      -- Input buffer is full too, sleep.
-                     0 -> do usleep uSecs
+                     0 -> do threadDelay uSecs
                              ready (min maxUSecs (2 * waitUSecs)) (input : etc, inh, outh, errh, elems)
                      -- We wrote some input, discard it and continue
                      _n -> do let input' = B.drop count' input : etc

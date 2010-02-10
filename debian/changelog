@@ -1,3 +1,9 @@
+haskell-unixutils (1.26) unstable; urgency=low
+
+  * In lazyRun, use Control.Concurrent.threadDelay instead of usleep
+
+ -- David Fox <dsf@seereason.com>  Wed, 10 Feb 2010 11:39:36 -0800
+
 haskell-unixutils (1.25) unstable; urgency=low
 
   * Call hSetBinaryMode on all the handles before reading to avoid errors
