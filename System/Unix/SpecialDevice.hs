@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, TypeSynonymInstances #-}
 -- | Construct an ADT representing block and character devices
 -- (but mostly block devices) by interpreting the contents of
 -- the Linux sysfs filesystem.
@@ -36,7 +36,7 @@ module System.Unix.SpecialDevice
     )
     where
 
-import Control.OldException
+import Control.Exception
 import System.IO
 import System.Directory
 import Data.Char
@@ -46,7 +46,7 @@ import System.FilePath
 import System.Posix.Types
 import System.Posix.Files
 import System.Posix.User
-import Text.Regex
+import Text.Regex.TDFA
 
 data SpecialDevice =
     BlockDevice DeviceID | CharacterDevice DeviceID
@@ -60,7 +60,7 @@ ofPath :: FilePath -> IO (Maybe SpecialDevice)
 ofPath path =
     -- Catch the exception thrown on an invalid symlink
     (try $ getFileStatus path) >>=
-    return . either (const Nothing) (Just . BlockDevice . deviceID)
+    return . either (\ (_ :: SomeException) -> Nothing) (Just . BlockDevice . deviceID)
 
 rootPart :: IO (Maybe SpecialDevice)
 rootPart = ofPath "/"
@@ -70,7 +70,7 @@ rootPart = ofPath "/"
 -- if the node turns out not to be a special device.
 ofNode :: FilePath -> IO (Maybe SpecialDevice)
 ofNode "/dev/root" = ofPath "/"
-ofNode node = (try $ getFileStatus node) >>= return . either (const Nothing) ofNodeStatus
+ofNode node = (try $ getFileStatus node) >>= return . either (\ (_ :: SomeException) -> Nothing) ofNodeStatus
 
 ofNodeStatus :: FileStatus -> Maybe SpecialDevice
 ofNodeStatus status =
@@ -182,13 +182,16 @@ getAllDisks =
       return (catMaybes devs)
     where
       inGroup group (_, status) = fileGroup status == group
-      isPart (path, _) = maybe False (const True) (matchRegex (mkRegex "-part[0-9]+$") path)
 
 getAllPartitions :: IO [SpecialDevice]
 getAllPartitions =
     directory_find True "/dev/disk/by-path" >>= return . filter isPart >>= return . catMaybes . map (ofNodeStatus . snd)
-    where
-      isPart (path, _) = maybe False (const True) (matchRegex (mkRegex "-part[0-9]+$") path)
+
+isPart :: (FilePath, FileStatus) -> Bool
+isPart (path, _) =
+    case path =~ "-part[0-9]+$" of
+      x | mrMatch x == "" -> False
+      x -> True
 
 getAllCdroms :: IO [SpecialDevice]
 getAllCdroms = cdromGroup >>= getDisksInGroup 
@@ -203,27 +206,20 @@ getAllRemovable = floppyGroup >>= getDisksInGroup
 -- fileStatus) pairs.
 directory_find :: Bool -> FilePath -> IO [(FilePath, FileStatus)]
 directory_find follow path =
-    do
-      maybeStatus <- 
-          if follow then
-              -- Catch the exception exception thrown on an invalid symlink
-              try . getFileStatus $ path else
-              getSymbolicLinkStatus path >>= return . Right
-      case maybeStatus of
-        Left _ -> return []
-        Right status ->
-            case isDirectory status of
-              True -> 
-                  do
-                    -- Catch the exception thrown if we lack read permission
-                    subs <- (try $ getDirectoryContents path) >>=
-                            return . either (const []) id >>=
-                            return . map (path </>) . filter (not . flip elem [".", ".."]) >>=
-                            mapM (directory_find follow) >>=
-                            return . concat
-                    return $ (path, status) : subs
-              False ->
-                  return [(path, status)]
+    if follow then fileStatus else linkStatus
+    where
+      fileStatus = try (getFileStatus path) >>= either (\ (_ :: SomeException) -> return []) useStatus
+      linkStatus = getSymbolicLinkStatus path >>= useStatus
+      useStatus status
+          | isDirectory status =
+              do -- Catch the exception thrown if we lack read permission
+                 subs <- (try $ getDirectoryContents path) >>=
+                         return . either (\ (_ :: SomeException) -> []) id >>=
+                         return . map (path </>) . filter (not . flip elem [".", ".."]) >>=
+                         mapM (directory_find follow) >>=
+                         return . concat
+                 return $ (path, status) : subs
+          | True = return [(path, status)]
 
 dirname path = reverse . tail . snd . break (== '/') . reverse $ path
 basename path = reverse . fst . break (== '/') . reverse $ path

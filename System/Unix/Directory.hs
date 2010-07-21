@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 module System.Unix.Directory
     ( find
     , removeRecursiveSafely
@@ -10,7 +10,7 @@ module System.Unix.Directory
     )
     where
 
-import Control.OldException
+import Control.Exception
 import Data.List (isSuffixOf)
 import System.Cmd
 import System.Directory
@@ -49,7 +49,7 @@ traverse :: FilePath -> (FilePath -> IO ()) -> (FilePath -> IO ()) -> (FilePath 
 traverse path f d m =
     do
       result <- try $ getSymbolicLinkStatus path
-      either (\ _ -> return ()) (doPath path) result
+      either (\ (_ :: SomeException) -> return ()) (doPath path) result
     where
       doPath path status =
           if isDirectory status then

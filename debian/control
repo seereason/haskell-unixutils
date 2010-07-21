@@ -8,10 +8,10 @@ Build-Depends: debhelper (>= 4.0.0),
                ghc6-prof,
                haddock,
                ghc6-doc,
+               libghc6-regex-tdfa-prof,
+               libghc6-regex-tdfa-doc,
                libghc6-parallel-prof,
-               libghc6-parallel-doc,
-               libghc6-regex-compat-prof,
-               haskell-regex-compat-doc
+               libghc6-parallel-doc
 Standards-Version: 3.7.2.0
 
 Package: libghc6-unixutils-dev

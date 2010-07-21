@@ -1,3 +1,12 @@
+haskell-unixutils (1.27) unstable; urgency=low
+
+  * Add System.Unix.ProcessExtra, a module that collects all the random
+    ways that have evolved for running shell commands.
+  * Use regex-tdfa instead of regex-posix
+  * Use Control.Exception instead of Control.OldException.
+
+ -- David Fox <dsf@seereason.com>  Wed, 21 Jul 2010 09:01:35 +0100
+
 haskell-unixutils (1.26) unstable; urgency=low
 
   * In lazyRun, use Control.Concurrent.threadDelay instead of usleep

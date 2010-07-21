@@ -12,7 +12,7 @@ module System.Unix.FilePath
 
 import Data.List
 import System.FilePath (makeRelative, (</>), takeFileName, dropFileName)
-import Text.Regex
+--import Text.Regex
 import Foreign.C
 import Foreign.Marshal.Array
 

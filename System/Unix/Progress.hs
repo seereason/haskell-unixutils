@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- |Run shell commands with various types of progress reporting.
 --
 -- Author: David Fox
@@ -27,7 +28,7 @@ module System.Unix.Progress
      fixedTimeDiffToString
     ) where
 
-import Control.OldException
+import Control.Exception
 import Data.List
 import System.Exit
 import System.IO
@@ -133,8 +134,9 @@ otherTask style task =
       finish <- getClockTime
       let elapsed = diffClockTimes finish start
       case result of
-        Left e -> do errorMessage style (show e)
-                     error (show e)
+        Left (e :: SomeException) ->
+            do errorMessage style (show e)
+               error (show e)
         Right a ->
             do finishMessage style elapsed
                return a
