@@ -1,11 +1,11 @@
 Name:           Unixutils
-Version:        1.27
+Version:        1.28
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw
 Homepage:       http://src.seereason.com/haskell-unixutils
 Category:	System
-Build-Depends:  base >= 4 && <5, mtl, unix, regex-tdfa, process, bytestring, directory, old-time, parallel, filepath
+Build-Depends:  base >= 4 && <5, mtl, unix, regex-tdfa, process < 3, bytestring, directory, old-time, parallel, filepath
 Synopsis:       A crude interface between Haskell and Unix-like operating systems
 Maintainer:     jeremy@n-heptane.com
 Description:
