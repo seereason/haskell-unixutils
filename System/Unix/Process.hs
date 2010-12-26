@@ -3,15 +3,8 @@
 -- |functions for killing processes, running processes, etc
 module System.Unix.Process
     (
-    -- * Strict process running
-      simpleProcess	-- FilePath -> [String] -> IO (String, String, ExitCode)
-    , processResult	-- FilePath -> [String] -> IO (Either Int (String, String))
-    , processOutput	-- FilePath -> [String] -> IO (Either Int String)
-    , simpleCommand	-- String -> IO (String, String, ExitCode)
-    , commandResult	-- String -> IO (Either Int (String, String))
-    , commandOutput	-- String -> IO (Either Int String)
     -- * Lazy process running
-    , Process
+      Process
     , Output(Stdout, Stderr, Result)
     , lazyRun		-- L.ByteString -> Process -> IO [Output]
     , lazyCommand	-- String -> IO [Output]
@@ -31,7 +24,8 @@ module System.Unix.Process
     , collectOutput
     , collectOutputUnpacked
     , ExitCode(ExitSuccess, ExitFailure)
-    , exitCodeOnly	-- [Output] -> [ExitCode]
+    , exitCodesOnly	-- [Output] -> [ExitCode]
+    , exitCodeOnly	-- m [Output] -> m ExitCode
     , hPutNonBlocking	-- Handle -> B.ByteString -> IO Int
     -- * Process killing
     , killByCwd		-- FilePath -> IO [(String, Maybe String)]
@@ -39,8 +33,8 @@ module System.Unix.Process
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (liftM, filterM)
-import Control.Exception hiding (catch)
-import Control.Parallel.Strategies (rnf)
+--import Control.Exception hiding (catch)
+--import Control.Parallel.Strategies (rnf)
 import Data.Char (isDigit)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
@@ -50,7 +44,7 @@ import Data.List (isPrefixOf)
 import Data.Int (Int64)
 import qualified GHC.IO.Exception as E
 import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess, runInteractiveCommand)
-import System.IO (Handle, hSetBinaryMode, hReady, hPutBufNonBlocking, hClose, hGetContents)
+import System.IO (Handle, hSetBinaryMode, hReady, hPutBufNonBlocking, hClose {-, hGetContents-})
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Directory (getDirectoryContents)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
@@ -89,66 +83,6 @@ killByCwd path =
       kill :: String -> IO ()
       kill pidStr = signalProcess sigTERM (read pidStr)
 
--- |'simpleProcess' - run a process returning (stdout, stderr, exitcode)
---
--- /Warning/ - stdout and stderr will be read strictly so that we do
--- not deadlock when trying to check the exitcode. Do not try doing
--- something like, @simpleProcess [\"yes\"]@
---
--- NOTE: this may still dead-lock because we first strictly read
--- outStr and then errStr. Perhaps we should use forkIO or something?
-simpleProcess :: FilePath -> [String] -> IO (String, String, ExitCode)
-simpleProcess exec args =
-    do (inp,out,err,pid) <- runInteractiveProcess exec args Nothing Nothing
-       hSetBinaryMode out True
-       hSetBinaryMode err True
-       hClose inp
-       outStr <- hGetContents out
-       errStr <- hGetContents err
-       evaluate (rnf outStr) -- read output strictly
-       evaluate (rnf errStr) -- read stderr strictly
-       ec <- waitForProcess pid
-       return (outStr, errStr, ec)
-
-processResult :: FilePath -> [String] -> IO (Either Int (String, String))
-processResult exec args =
-    simpleProcess exec args >>= return . resultOrCode
-    where
-      resultOrCode (_, _, ExitFailure n) = Left n
-      resultOrCode (out, err, ExitSuccess) = Right (out, err)
-
-processOutput :: FilePath -> [String] -> IO (Either Int String)
-processOutput exec args =
-    simpleProcess exec args >>= return . outputOrCode
-    where
-      outputOrCode (_, _, ExitFailure n) = Left n
-      outputOrCode (out, _, ExitSuccess) = Right out
-
-simpleCommand :: String -> IO (String, String, ExitCode)
-simpleCommand cmd =
-    do (inp,out,err,pid) <- runInteractiveCommand cmd
-       hClose inp
-       outStr <- hGetContents out
-       errStr <- hGetContents err
-       evaluate (rnf outStr) -- read output strictly
-       evaluate (rnf errStr) -- read stderr strictly
-       ec <- waitForProcess pid
-       return (outStr, errStr, ec)
-
-commandResult :: String -> IO (Either Int (String, String))
-commandResult cmd =
-    simpleCommand cmd >>= return . resultOrCode
-    where
-      resultOrCode (_, _, ExitFailure n) = Left n
-      resultOrCode (out, err, ExitSuccess) = Right (out, err)
-
-commandOutput :: String -> IO (Either Int String)
-commandOutput cmd =
-    simpleCommand cmd >>= return . outputOrCode
-    where
-      outputOrCode (_, _, ExitFailure n) = Left n
-      outputOrCode (out, _, ExitSuccess) = Right out
-
 {- Functions to run a process and return a lazy list of chunks from
    standard output, standard error, and at the end of the list an
    object indicating the process result code.  If neither output
@@ -159,8 +93,9 @@ commandOutput cmd =
 -- | This is the type returned by 'System.Process.runInteractiveProcess' et. al.
 type Process = (Handle, Handle, Handle, ProcessHandle)
 
--- | The process returns a list of objects of type 'Output'.  There will be
--- one Result object at the end of the list (if the list has an end.)
+-- | The lazyCommand, lazyProcess and lazyRun functions each return a
+-- list of 'Output'.  There will generally be one Result value at or
+-- near the end of the list (if the list has an end.)
 data Output
     = Stdout B.ByteString
     | Stderr B.ByteString
@@ -305,10 +240,16 @@ outputOnly out =
       f [] = []
 
 -- | Filter everything except the exit code from the output list.
-exitCodeOnly :: [Output] -> [ExitCode]
-exitCodeOnly (Result code : etc) = code : exitCodeOnly etc
-exitCodeOnly (_ : etc) = exitCodeOnly etc
-exitCodeOnly [] = []
+exitCodesOnly :: [Output] -> [ExitCode]
+exitCodesOnly (Result code : etc) = code : exitCodesOnly etc
+exitCodesOnly (_ : etc) = exitCodesOnly etc
+exitCodesOnly [] = []
+
+exitCodeOnly :: [Output] -> ExitCode
+exitCodeOnly output = case exitCodesOnly output of
+                        [x] -> x
+                        [] -> error "No exit code in output stream"
+                        xs -> error $ "Multiple error codes in output stream: " ++ show xs
 
 -- | This belongs in Data.ByteString.  See ticket 1070,
 -- <http://hackage.haskell.org/trac/ghc/ticket/1070>.

@@ -2,7 +2,7 @@
 -- |Run shell commands with various types of progress reporting.
 --
 -- Author: David Fox
-module System.Unix.Progress
+module System.Unix.Progress {-# DEPRECATED "Use Debian.Shell in debian-repo" #-}
     (
      systemTask, 	-- [Style] -> String -> IO TimeDiff
      otherTask,		-- [Style] -> IO a -> IO a

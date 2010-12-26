@@ -45,7 +45,7 @@ rf path = lazyCommand ("cat '" ++ path ++ "'") empty >>= return . (\ (o, _, _) -
 --
 -- See also: 'umountSucceeded'
 umountBelow :: FilePath -- ^ canonicalised, absolute path
-            -> IO [(FilePath, (String, String, ExitCode))] -- ^ paths that we attempted to umount, and the responding output from the umount command
+            -> IO [(FilePath, (String, String, [ExitCode]))] -- ^ paths that we attempted to umount, and the responding output from the umount command
 umountBelow belowPath =
     do procMount <- rf "/proc/mounts"
        let mountPoints = map (unescape . (!! 1) . words) (lines procMount)
@@ -88,8 +88,8 @@ escape (c:rest)    = c : (escape rest)
 -- NOTE: this function uses exec, so you do /not/ need to shell-escape
 -- NOTE: we don't use the umount system call because the system call
 -- is not smart enough to update \/etc\/mtab
-umount :: [String] -> IO (String, String, ExitCode)
-umount args = simpleProcess "umount" args
+umount :: [String] -> IO (String, String, [ExitCode])
+umount args = lazyProcess "umount" args Nothing Nothing empty >>= return . collectOutputUnpacked
 
 isMountPoint :: FilePath -> IO Bool
 -- This implements the functionality of mountpoint(1), deciding

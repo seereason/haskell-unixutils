@@ -1,5 +1,5 @@
 Name:           Unixutils
-Version:        1.29
+Version:        1.30
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw
@@ -14,8 +14,8 @@ Description:
 Build-type:	Simple
 ghc-options:	-O2
 Exposed-modules:
-        System.Unix.Crypt, System.Unix.Directory, System.Unix.FilePath, System.Unix.List,
-	System.Unix.Misc, System.Unix.Mount, System.Unix.Process, System.Unix.ProcessExtra,
+        System.Unix.Crypt, System.Unix.Directory, System.Unix.FilePath, System.Unix.Misc, System.Unix.Mount,
+        System.Unix.Process, System.Unix.ProcessExtra, System.Unix.ProcessStrict,
 	System.Unix.Progress, System.Unix.Shadow, System.Unix.SpecialDevice, System.Unix.Files
 Extra-libraries: crypt
 

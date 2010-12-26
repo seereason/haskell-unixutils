@@ -1,3 +1,17 @@
+haskell-unixutils (1.30) unstable; urgency=low
+
+  * Rename exitCodeOnly -> exitCodesOnly because it returns a list, add
+    exitCodeOnly which returns a single exit code, if the output stream
+    does not have exactly one exit code it will raise an exception.
+  * Split the strict process functions (simpleCommand, processOuput,
+    simpleProcess, commandResult, commandOutput) into a ProcessStrict
+    module and mark them deprecated.
+  * Remove System.Unix.List, it contained two aliases for intercalate.
+  * Change signature of System.Unix.Mount.unmount due to switch from
+    simpleCommand to lazyCommand.
+
+ -- David Fox <dsf@seereason.com>  Sun, 26 Dec 2010 07:03:06 -0800
+
 haskell-unixutils (1.29) unstable; urgency=low
 
   * Added System.Unix.Crypt

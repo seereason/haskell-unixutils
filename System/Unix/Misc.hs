@@ -7,6 +7,7 @@ module System.Unix.Misc
     where
 
 import Control.Exception
+import Data.ByteString.Lazy.Char8 (empty)
 import Data.Maybe
 import System.Cmd
 import System.Directory
@@ -19,15 +20,16 @@ import System.Unix.Process
 md5sum :: FilePath -> IO String
 md5sum path =
     do
-      (text, _, exitCode) <- simpleProcess "md5sum" [path]
+      (text, _, exitCodes) <- lazyProcess "md5sum" [path] Nothing Nothing empty >>= return . collectOutputUnpacked
       let output = listToMaybe (words text)
-      case exitCode of
-        ExitSuccess ->
+      case exitCodes of
+        [ExitSuccess] ->
             case output of
               Nothing -> error ("Error in output of 'md5sum " ++ path ++ "'")
               Just checksum -> return checksum
-        ExitFailure _ -> error ("Error running 'md5sum " ++ path ++ "'")
+        _ -> error ("Error running 'md5sum " ++ path ++ "'")
 
+{-# WARNING gzip "System.Unix.Misc.gzip does not properly escape its path arguments" #-}
 gzip :: FilePath -> IO ()
 gzip path =
     do
