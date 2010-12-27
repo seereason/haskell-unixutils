@@ -15,17 +15,17 @@ cmdOutput :: String -> IO (Either ErrorCall L.ByteString)
 cmdOutput cmd =
     do (out, err, code) <- lazyCommand cmd L.empty >>= return . collectOutput
        case code of
-         (ExitSuccess : _) -> return (Right out)
+         ExitSuccess -> return (Right out)
          _ -> return . Left . ErrorCall $ "Failure: " ++ show cmd ++ " -> " ++ show code ++ "\n\nstdpout:\n\n" ++ show (L.unpack out) ++ "\n\nstderr:\n\n" ++ show (L.unpack err)
 
 cmdOutputStrict :: String -> IO (Either ErrorCall B.ByteString)
 cmdOutputStrict cmd =
     do (out, err, code) <- lazyCommand cmd L.empty >>= return . f . collectOutput
        case code of
-         (ExitSuccess : _) -> return (Right out)
+         ExitSuccess -> return (Right out)
          _ -> return . Left . ErrorCall $ "Failure: " ++ show cmd ++ " -> " ++ show code ++ "\n\nstdpout:\n\n" ++ show (B.unpack out) ++ "\n\nstderr:\n\n" ++ show (B.unpack err)
     where
-      f :: (L.ByteString, L.ByteString, [ExitCode]) -> (B.ByteString, B.ByteString, [ExitCode])
+      f :: (L.ByteString, L.ByteString, ExitCode) -> (B.ByteString, B.ByteString, ExitCode)
       f (o, e, c) = (toStrict o, toStrict e, c)
 
 toLazy :: B.ByteString -> L.ByteString

@@ -20,10 +20,10 @@ import System.Unix.Process
 md5sum :: FilePath -> IO String
 md5sum path =
     do
-      (text, _, exitCodes) <- lazyProcess "md5sum" [path] Nothing Nothing empty >>= return . collectOutputUnpacked
+      (text, _, exitCode) <- lazyProcess "md5sum" [path] Nothing Nothing empty >>= return . collectOutputUnpacked
       let output = listToMaybe (words text)
-      case exitCodes of
-        [ExitSuccess] ->
+      case exitCode of
+        ExitSuccess ->
             case output of
               Nothing -> error ("Error in output of 'md5sum " ++ path ++ "'")
               Just checksum -> return checksum

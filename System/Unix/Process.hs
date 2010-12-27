@@ -24,8 +24,7 @@ module System.Unix.Process
     , collectOutput
     , collectOutputUnpacked
     , ExitCode(ExitSuccess, ExitFailure)
-    , exitCodesOnly	-- [Output] -> [ExitCode]
-    , exitCodeOnly	-- m [Output] -> m ExitCode
+    , exitCodeOnly	-- [Output] -> ExitCode
     , hPutNonBlocking	-- Handle -> B.ByteString -> IO Int
     -- * Process killing
     , killByCwd		-- FilePath -> IO [(String, Maybe String)]
@@ -102,35 +101,47 @@ data Output
     | Result ExitCode
       deriving Show
 
+-- |An opaque type would give us additional type safety to ensure the
+-- semantics of 'exitCodeOnly'.
+type Outputs = [Output]
+
 bufSize = 65536		-- maximum chunk size
 uSecs = 8		-- minimum wait time, doubles each time nothing is ready
 maxUSecs = 100000	-- maximum wait time (microseconds)
 
 -- | Create a process with 'runInteractiveCommand' and run it with 'lazyRun'.
-lazyCommand :: String -> L.ByteString -> IO [Output]
+lazyCommand :: String -> L.ByteString -> IO Outputs
 lazyCommand cmd input = runInteractiveCommand cmd >>= lazyRun input
 
 -- | Create a process with 'runInteractiveProcess' and run it with 'lazyRun'.
 lazyProcess :: FilePath -> [String] -> Maybe FilePath
-            -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+            -> Maybe [(String, String)] -> L.ByteString -> IO Outputs
 lazyProcess exec args cwd env input =
     runInteractiveProcess exec args cwd env >>= lazyRun input
 
 -- | Take the tuple like that returned by 'runInteractiveProcess',
 -- create a process, send the list of inputs to its stdin and return
 -- the lazy list of 'Output' objects.
-lazyRun :: L.ByteString -> Process -> IO [Output]
+lazyRun :: L.ByteString -> Process -> IO Outputs
 lazyRun input (inh, outh, errh, pid) =
     hSetBinaryMode inh True >>
     hSetBinaryMode outh True >>
     hSetBinaryMode errh True >>
     elements (L.toChunks input, Just inh, Just outh, Just errh, [])
     where
-      elements :: ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output]) -> IO [Output]
-      -- EOF on both output descriptors, get exit code
+      elements :: ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, Outputs) -> IO Outputs
+      -- EOF on both output descriptors, get exit code.  It can be
+      -- argued that the list will always contain exactly one exit
+      -- code if traversed to its end, because the only case of
+      -- elements that does not recurse is the one that adds a Result,
+      -- and there is nowhere else where a Result is added.  However,
+      -- the process doing the traversing may die before that end is
+      -- reached.
       elements (_, _, Nothing, Nothing, elems) =
           do result <- waitForProcess pid
-             return $ elems ++ [Result result]
+             -- Note that there is no need to insert the result code
+             -- at the end of the list.
+             return $ Result result : elems
       -- The available output has been processed, send input and read
       -- from the ready handles
       elements tl@(_, _, _, _, []) = ready uSecs tl >>= elements
@@ -156,8 +167,8 @@ hReady' h = (hReady h >>= (\ flag -> return (if flag then Ready else Unready))) 
 -- are accepted.  If no input is accepted, or the input handle is
 -- already closed, and none of the output descriptors are ready for
 -- reading the function sleeps and tries again.
-ready :: Int -> ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output])
-      -> IO ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, [Output])
+ready :: Int -> ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, Outputs)
+      -> IO ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, Outputs)
 ready waitUSecs (input, inh, outh, errh, elems) =
     do
       outReady <- maybe (return Unready) hReady' outh
@@ -195,7 +206,7 @@ ready waitUSecs (input, inh, outh, errh, elems) =
 
 -- | Return the next output element and the updated handle
 -- from a handle which is assumed ready.
-nextOut :: (Maybe Handle) -> Readyness -> (B.ByteString -> Output) -> IO ([Output], Maybe Handle)
+nextOut :: (Maybe Handle) -> Readyness -> (B.ByteString -> Output) -> IO (Outputs, Maybe Handle)
 nextOut Nothing _ _ = return ([], Nothing)	-- Handle is closed
 nextOut _ EndOfFile _ = return ([], Nothing)	-- Handle is closed
 nextOut handle Unready _ = return ([], handle)	-- Handle is not ready
@@ -211,7 +222,7 @@ nextOut (Just handle) Ready constructor =	-- Perform a read
         _n -> return ([constructor a], Just handle)
 
 -- | Filter everything except stdout from the output list.
-stdoutOnly :: [Output] -> L.ByteString
+stdoutOnly :: Outputs -> L.ByteString
 stdoutOnly out =
     L.fromChunks $ f out
     where 
@@ -220,7 +231,7 @@ stdoutOnly out =
       f [] = []
 
 -- | Filter everything except stderr from the output list.
-stderrOnly :: [Output] -> L.ByteString
+stderrOnly :: Outputs -> L.ByteString
 stderrOnly out =
     L.fromChunks $ f out
     where
@@ -230,7 +241,7 @@ stderrOnly out =
 
 -- | Filter the exit codes output list and merge the two output
 -- streams in the order they appear.
-outputOnly :: [Output] -> L.ByteString
+outputOnly :: Outputs -> L.ByteString
 outputOnly out =
     L.fromChunks $ f out
     where
@@ -239,17 +250,14 @@ outputOnly out =
       f (_ : etc) = f etc
       f [] = []
 
--- | Filter everything except the exit code from the output list.
-exitCodesOnly :: [Output] -> [ExitCode]
-exitCodesOnly (Result code : etc) = code : exitCodesOnly etc
-exitCodesOnly (_ : etc) = exitCodesOnly etc
-exitCodesOnly [] = []
-
-exitCodeOnly :: [Output] -> ExitCode
-exitCodeOnly output = case exitCodesOnly output of
-                        [x] -> x
-                        [] -> error "No exit code in output stream"
-                        xs -> error $ "Multiple error codes in output stream: " ++ show xs
+-- | Filter everything except the exit code from the output list.  See
+-- discussion in 'lazyRun' of why we are confident that the list will
+-- contain exactly one 'Result'.  An opaque type to hold the 'Output'
+-- list would lend additional safety here.
+exitCodeOnly :: Outputs -> ExitCode
+exitCodeOnly (Result code : _) = code
+exitCodeOnly (_ : etc) = exitCodeOnly etc
+exitCodeOnly [] = error "exitCodeOnly - no Result found"
 
 -- | This belongs in Data.ByteString.  See ticket 1070,
 -- <http://hackage.haskell.org/trac/ghc/ticket/1070>.
@@ -272,27 +280,27 @@ hPutNonBlocking h b =
 -- > lazyCommand "yes" [] >>= return . stdoutOnly >>= lazyCommand "cat -n" >>= mapM_ (putStrLn . show)
 
 
-checkResult :: (Int -> a) -> a -> [Output] -> a
+checkResult :: (Int -> a) -> a -> Outputs -> a
 checkResult _ _ [] = error $ "*** FAILURE: Missing exit code"
 checkResult _ onSuccess (Result ExitSuccess : _) = onSuccess
 checkResult onFailure _ (Result (ExitFailure n) : _) = onFailure n
 checkResult onFailure onSuccess (_ : more) = checkResult onFailure onSuccess more
 
-discardStdout :: [Output] -> [Output]
+discardStdout :: Outputs -> Outputs
 discardStdout (Stdout _ : more) = discardStdout more
 discardStdout (x : more) = x : discardStdout more
 discardStdout [] = []
 
-discardStderr :: [Output] -> [Output]
+discardStderr :: Outputs -> Outputs
 discardStderr (Stderr _ : more) = discardStderr more
 discardStderr (x : more) = x : discardStderr more
 discardStderr [] = []
 
-discardOutput :: [Output] -> [Output]
+discardOutput :: Outputs -> Outputs
 discardOutput = discardStdout . discardStderr
 
 -- |Turn all the Stdout text into Stderr, preserving the order.
-mergeToStderr :: [Output] -> [Output]
+mergeToStderr :: Outputs -> Outputs
 mergeToStderr output =
     map merge output
     where
@@ -300,7 +308,7 @@ mergeToStderr output =
       merge x = x
 
 -- |Turn all the Stderr text into Stdout, preserving the order.
-mergeToStdout :: [Output] -> [Output]
+mergeToStdout :: Outputs -> Outputs
 mergeToStdout output =
     map merge output
     where
@@ -308,7 +316,7 @@ mergeToStdout output =
       merge x = x
 
 -- |Split out and concatenate Stdout
-collectStdout :: [Output] -> (L.ByteString, [Output])
+collectStdout :: Outputs -> (L.ByteString, Outputs)
 collectStdout output =
     (L.fromChunks out, other)
     where
@@ -317,7 +325,7 @@ collectStdout output =
       collect x (text, result) = (text, x : result)
 
 -- |Split out and concatenate Stderr
-collectStderr :: [Output] -> (L.ByteString, [Output])
+collectStderr :: Outputs -> (L.ByteString, Outputs)
 collectStderr output =
     (L.fromChunks err, other)
     where
@@ -326,17 +334,17 @@ collectStderr output =
       collect x (text, result) = (text, x : result)
 
 -- |Split out and concatenate both Stdout and Stderr, leaving only the exit code.
-collectOutput :: [Output] -> (L.ByteString, L.ByteString, [ExitCode])
+collectOutput :: Outputs -> (L.ByteString, L.ByteString, ExitCode)
 collectOutput output =
     (L.fromChunks out, L.fromChunks err, code)
     where
-      (out, err, code) = foldr collect ([], [], []) output
+      (out, err, code) = foldr collect ([], [], ExitFailure 666) output
       collect (Stdout s) (out, err, result) = (s : out, err, result)
       collect (Stderr s) (out, err, result) = (out, s : err, result)
-      collect (Result r) (out, err, result) = (out, err, r : result)
+      collect (Result result) (out, err, _) = (out, err, result)
 
 -- |Collect all output, unpack and concatenate.
-collectOutputUnpacked :: [Output] -> (String, String, [ExitCode])
+collectOutputUnpacked :: Outputs -> (String, String, ExitCode)
 collectOutputUnpacked =
     unpack . collectOutput
     where unpack (out, err, result) = (C.unpack out, C.unpack err, result)

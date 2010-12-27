@@ -1,3 +1,11 @@
+haskell-unixutils (1.31) unstable; urgency=low
+
+  * Remove exitCodesOnly, and change exitCodeOnly signature to [Output] ->
+    ExitCode, having convinced myself that the list will always contain
+    exactly one Result element.
+
+ -- David Fox <dsf@seereason.com>  Mon, 27 Dec 2010 05:01:02 -0800
+
 haskell-unixutils (1.30) unstable; urgency=low
 
   * Rename exitCodeOnly -> exitCodesOnly because it returns a list, add
