@@ -1,3 +1,10 @@
+haskell-unixutils (1.32) unstable; urgency=low
+
+  * Move the new subprocess progress reporting code from debian-repo into
+    System.Unix.Progress, move existing module to OldProgress.
+
+ -- David Fox <dsf@seereason.com>  Tue, 28 Dec 2010 12:19:36 -0800
+
 haskell-unixutils (1.31) unstable; urgency=low
 
   * Remove exitCodesOnly, and change exitCodeOnly signature to [Output] ->

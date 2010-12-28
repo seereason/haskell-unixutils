@@ -33,7 +33,6 @@ toLazy b = L.fromChunks [b]
 
 toStrict :: L.ByteString -> B.ByteString
 toStrict b = B.concat (L.toChunks b)
-
 echoCommand :: String -> L.ByteString -> IO [Output]
 echoCommand command input =
     ePutStrBl ("# " ++ command) >>
