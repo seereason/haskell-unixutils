@@ -23,6 +23,7 @@ module System.Unix.Process
     , collectStderr
     , collectOutput
     , collectOutputUnpacked
+    , collectResult
     , ExitCode(ExitSuccess, ExitFailure)
     , exitCodeOnly	-- [Output] -> ExitCode
     , hPutNonBlocking	-- Handle -> B.ByteString -> IO Int
@@ -39,7 +40,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, partition)
 import Data.Int (Int64)
 import qualified GHC.IO.Exception as E
 import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess, runInteractiveCommand)
@@ -348,3 +349,13 @@ collectOutputUnpacked :: Outputs -> (String, String, ExitCode)
 collectOutputUnpacked =
     unpack . collectOutput
     where unpack (out, err, result) = (C.unpack out, C.unpack err, result)
+
+-- |Partition the exit code from the outputs.
+collectResult :: Outputs -> (Outputs, ExitCode)
+collectResult output =
+    unResult (partition isResult output)
+    where
+      isResult (Result _) = True
+      isResult _ = False
+      unResult (out, [Result x]) = (out, x)
+      unResult _ = error "Internal error - wrong number of results"

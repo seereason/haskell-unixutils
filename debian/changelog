@@ -1,3 +1,9 @@
+haskell-unixutils (1.33) unstable; urgency=low
+
+  * Add collectResult.
+
+ -- David Fox <dsf@seereason.com>  Wed, 29 Dec 2010 15:42:33 -0800
+
 haskell-unixutils (1.32) unstable; urgency=low
 
   * Move the new subprocess progress reporting code from debian-repo into
