@@ -39,6 +39,8 @@ module System.Unix.Progress
     , eMessageLn
     , qMessage
     , qMessageLn
+    -- Unit tests
+    , tests
     ) where
 
 import Control.Exception (evaluate, try, SomeException)
@@ -49,13 +51,15 @@ import qualified Data.ByteString.Internal as B
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.List (intercalate)
+import qualified Data.Set as Set
 import Data.Time (NominalDiffTime, getCurrentTime, diffUTCTime)
 import System.Environment (getArgs, getEnv)
 import System.Exit (ExitCode(..))
 import System.IO (hPutStrLn, stderr, hPutStr)
 import System.Posix.Env (setEnv)
-import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr), exitCodeOnly)
-import qualified Data.Set as Set
+import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
+                            exitCodeOnly, stdoutOnly, mergeToStdout)
+import Test.HUnit
 
 -- |A monad for controlling progress reporting of subprocesses.
 type Progress a = StateT (Set.Set ProgressFlag) IO a
@@ -327,3 +331,14 @@ qMessage message output = quietness >>= \ q -> when (q <= 0) (ePutStr message) >
 -- |@qMessage@ with a terminating newline.
 qMessageLn :: String -> a -> IO a
 qMessageLn message output = quietness >>= \ q -> when (q <= 0) (ePutStrLn message) >> return output
+
+tests :: [Test]
+tests =
+    [TestCase (assertEqual "Check behavior of code to insert prefixes into Output"
+               (collect (prefixes (p "[1] ") (p "[2] ")
+                         [Stdout (p "abc\ndef\n\n"), Stderr (p "\nghi\njkl\n")]))
+               "[1] abc\n[1] def\n[1] \n[2] \n[2] ghi\n[2] jkl\n")]
+    where
+      p = B.pack
+      collect :: [(Output, Output)] -> String
+      collect = L.unpack . stdoutOnly . mergeToStdout . snd . unzip
