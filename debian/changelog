@@ -2,6 +2,7 @@ haskell-unixutils (1.32) unstable; urgency=low
 
   * Move the new subprocess progress reporting code from debian-repo into
     System.Unix.Progress, move existing module to OldProgress.
+  * Add quietness control to progress reporting.
 
  -- David Fox <dsf@seereason.com>  Tue, 28 Dec 2010 12:19:36 -0800
 
