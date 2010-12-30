@@ -82,7 +82,7 @@ data ProgressFlag
 
 -- |Run the Progress monad with the given flags.  The flag set is
 -- compute from the current quietness level, <= 0 the most verbose
--- and >= 4 the least.
+-- and >= 3 the least.
 runProgress :: [ProgressFlag]  -- ^ Additional flags, such as FailOnFail
             -> Progress a      -- ^ The progress task to be run
             -> IO a
@@ -92,9 +92,10 @@ runProgress flags action =
     where
       quietFlags n
           | n <= 0 = [Echo, All, Result]
-          | n == 1 = [Echo, Errors, Result]
-          | n == 2 = [Echo, Dots, Result]
-          | n == 3 = [Echo]
+          -- [Echo, Errors, Result]
+          | n == 1 = [Echo, Dots, Result]
+          -- [Echo, Result]
+          | n == 2 = [Echo]
           | True   = []
 
 lazyCommandP :: [ProgressFlag] -> String -> L.ByteString -> IO [Output]
