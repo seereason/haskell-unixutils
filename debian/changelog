@@ -1,3 +1,9 @@
+haskell-unixutils (1.34) unstable; urgency=low
+
+  * More flexible specification of verbosity levels.
+
+ -- David Fox <dsf@seereason.com>  Thu, 30 Dec 2010 12:06:53 -0800
+
 haskell-unixutils (1.33) unstable; urgency=low
 
   * Add collectResult.

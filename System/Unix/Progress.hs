@@ -5,22 +5,11 @@ module System.Unix.Progress
     ( -- * The Progress Monad
       Progress
     , ProgressFlag(..)
+    , quietnessLevels
     , runProgress
     -- * Process launching
     , lazyCommandP
     , lazyProcessP
-    , lazyCommandV -- Print everything
-    , lazyProcessV
-    , lazyCommandF -- Like V, but throws exception on failure
-    , lazyProcessF
-    , lazyCommandE -- Print everything on failure
-    , lazyProcessE
-    , lazyCommandEF -- E and F combo
-    , lazyProcessEF
-    , lazyCommandD -- Dots
-    , lazyCommandQ -- Quiet
-    , lazyCommandS -- Silent
-    , lazyCommandSF
     -- * Quietness control
     , defaultQuietness
     , modQuietness
@@ -39,14 +28,29 @@ module System.Unix.Progress
     , eMessageLn
     , qMessage
     , qMessageLn
-    -- Unit tests
+    -- * Unit tests
     , tests
+    -- * A set of lazyCommand functions for an example set of verbosity levels
+    , defaultLevels
+    , lazyCommandV -- Print everything
+    , lazyProcessV
+    , lazyCommandF -- Like V, but throws exception on failure
+    , lazyProcessF
+    , lazyCommandE -- Print everything on failure
+    , lazyProcessE
+    , lazyCommandEF -- E and F combo
+    , lazyProcessEF
+    , lazyCommandD -- Dots
+    , lazyCommandQ -- Quiet
+    , lazyCommandS -- Silent
+    , lazyCommandSF
     ) where
 
 import Control.Exception (evaluate, try, SomeException)
 import Control.Monad (when)
 import Control.Monad.State (StateT, get, evalStateT)
 import "mtl" Control.Monad.Trans ( MonadIO, liftIO, lift )
+import Data.Array ((!), array, bounds)
 import qualified Data.ByteString.Internal as B
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
@@ -61,8 +65,10 @@ import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
                             exitCodeOnly, stdoutOnly, mergeToStdout)
 import Test.HUnit
 
+type ProgressState = Set.Set ProgressFlag
+
 -- |A monad for controlling progress reporting of subprocesses.
-type Progress m a = MonadIO m => StateT (Set.Set ProgressFlag) m a
+type Progress m a = MonadIO m => StateT ProgressState m a
 
 -- |The flags that control what type of output will be sent to stdout
 -- and stderr.  Also, the ExceptionOnFail flag controls whether an
@@ -80,68 +86,31 @@ data ProgressFlag
     | ExceptionOnFail
     deriving (Ord, Eq)
 
+-- |Create a function that returns the flags used for a given
+-- quietness level.
+quietnessLevels :: [Set.Set ProgressFlag] -> Int -> Set.Set ProgressFlag
+quietnessLevels flagLists i =
+    a ! (min r . max l $ i)
+    where a = array (0, length flagLists - 1) (zip [0..] flagLists)
+          (l, r) = bounds a
+
 -- |Run the Progress monad with the given flags.  The flag set is
 -- compute from the current quietness level, <= 0 the most verbose
 -- and >= 3 the least.
 runProgress :: MonadIO m =>
-               [ProgressFlag]  -- ^ Additional flags, such as FailOnFail
+               (Int -> Set.Set ProgressFlag)
             -> Progress m a      -- ^ The progress task to be run
             -> m a
 runProgress flags action =
-    quietness >>= \ q ->
-    evalStateT action (Set.fromList (flags ++ quietFlags q))
-    where
-      quietFlags n
-          | n <= 0 = [Echo, All, Result]
-          -- [Echo, Errors, Result]
-          | n == 1 = [Echo, Dots, Result]
-          -- [Echo, Result]
-          | n == 2 = [Echo]
-          | True   = []
+    quietness >>= evalStateT action . flags
 
-lazyCommandP :: MonadIO m => [ProgressFlag] -> String -> L.ByteString -> m [Output]
+lazyCommandP :: MonadIO m => (Int -> Set.Set ProgressFlag) -> String -> L.ByteString -> m [Output]
 lazyCommandP flags cmd input =
     runProgress flags (lift (lazyCommand cmd input) >>= doProgress cmd)
 
-lazyProcessP :: MonadIO m => [ProgressFlag] -> FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
+lazyProcessP :: MonadIO m => (Int -> Set.Set ProgressFlag) -> FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessP flags exec args cwd env input =
     runProgress flags (lift (lazyProcess exec args cwd env input) >>= doProgress (intercalate " " (exec : args)))
-
-lazyCommandV :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandV = lazyCommandP []
-
-lazyProcessV :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
-lazyProcessV = lazyProcessP []
-
-lazyCommandF :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandF = lazyCommandP [ExceptionOnFail]
-
-lazyProcessF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
-lazyProcessF = lazyProcessP [ExceptionOnFail]
-
-lazyCommandE :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandE = lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail]
-
-lazyProcessE :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
-lazyProcessE = lazyProcessP [EchoOnFail, AllOnFail, ResultOnFail]
-
-lazyCommandEF :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandEF = lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail]
-
-lazyProcessEF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
-lazyProcessEF = lazyProcessP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail]
-
-lazyCommandD :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandD cmd input = quieter 1 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
-
-lazyCommandQ :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandQ cmd input = quieter 3 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
-
-lazyCommandS :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandS cmd input = quieter 4 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
-
-lazyCommandSF :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandSF cmd input = quieter 4 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail] cmd input
 
 -- |Look for occurrences of -v and -q in the command line arguments
 -- and the current values of environment variables VERBOSITY and
@@ -203,7 +172,7 @@ doProgress cmd output =
           | Set.member Result s || (Set.member ResultOnFail s && exitCodeOnly output /= ExitSuccess) =
               liftIO (ePutStrLn ("<- " ++ show (exitCodeOnly output))) >> return output
           | True = return output
-      doFail :: MonadIO m => Set.Set ProgressFlag -> [Output] -> Progress m [Output]
+      doFail :: MonadIO m => ProgressState -> [Output] -> Progress m [Output]
       doFail s output
           | Set.member ExceptionOnFail s =
               case exitCodeOnly output of
@@ -336,6 +305,7 @@ qMessage message output = quietness >>= \ q -> when (q < 0) (ePutStr message) >>
 qMessageLn :: MonadIO m => String -> a -> m a
 qMessageLn message output = quietness >>= \ q -> when (q < 0) (ePutStrLn message) >> return output
 
+-- |Unit tests.
 tests :: [Test]
 tests =
     [TestCase (assertEqual "Check behavior of code to insert prefixes into Output"
@@ -346,3 +316,64 @@ tests =
       p = B.pack
       collect :: [(Output, Output)] -> String
       collect = L.unpack . stdoutOnly . mergeToStdout . snd . unzip
+
+-- A usable example of the construction of a verbosity level
+-- specification.  You can supply your own defaultLevels list and
+-- build the flags* and lazyCommand* functions in a similar way.
+
+defaultLevels :: [Set.Set ProgressFlag]
+defaultLevels =
+    map Set.fromList [ [Echo, All, Result]
+                     -- , [Echo, Errors, Result]
+                     , [Echo, Dots, Result]
+                     -- , [Echo, Result]
+                     , [Echo]
+                     , [] ]
+
+flags :: Int -> Set.Set ProgressFlag
+flags = quietnessLevels defaultLevels
+
+flagsF :: Int -> Set.Set ProgressFlag
+flagsF = quietnessLevels (map (Set.union (Set.fromList [ExceptionOnFail])) defaultLevels)
+
+flagsE :: Int -> Set.Set ProgressFlag
+flagsE = quietnessLevels (map (Set.union (Set.fromList [EchoOnFail, AllOnFail, ResultOnFail])) defaultLevels)
+
+flagsEF :: Int -> Set.Set ProgressFlag
+flagsEF = quietnessLevels (map (Set.union (Set.fromList [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail])) defaultLevels)
+
+lazyCommandV :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandV = lazyCommandP flags
+
+lazyProcessV :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
+lazyProcessV = lazyProcessP flags
+
+lazyCommandF :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandF = lazyCommandP flagsF
+
+lazyProcessF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
+lazyProcessF = lazyProcessP flagsF
+
+lazyCommandE :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandE = lazyCommandP flagsE
+
+lazyProcessE :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
+lazyProcessE = lazyProcessP flagsE
+
+lazyCommandEF :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandEF = lazyCommandP flagsEF
+
+lazyProcessEF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
+lazyProcessEF = lazyProcessP flagsEF
+
+lazyCommandD :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandD cmd input = quieter 1 $ lazyCommandP flagsE cmd input
+
+lazyCommandQ :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandQ cmd input = quieter 3 $ lazyCommandP flagsE cmd input
+
+lazyCommandS :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandS cmd input = quieter 4 $ lazyCommandP flagsE cmd input
+
+lazyCommandSF :: MonadIO m => String -> L.ByteString -> m [Output]
+lazyCommandSF cmd input = quieter 4 $ lazyCommandP flagsEF cmd input
