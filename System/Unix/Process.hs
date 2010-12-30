@@ -351,11 +351,11 @@ collectOutputUnpacked =
     where unpack (out, err, result) = (C.unpack out, C.unpack err, result)
 
 -- |Partition the exit code from the outputs.
-collectResult :: Outputs -> (Outputs, ExitCode)
+collectResult :: Outputs -> (ExitCode, Outputs)
 collectResult output =
     unResult (partition isResult output)
     where
       isResult (Result _) = True
       isResult _ = False
-      unResult (out, [Result x]) = (out, x)
-      unResult _ = error "Internal error - wrong number of results"
+      unResult ([Result x], out) = (x, out)
+      unResult _ = error $ "Internal error - wrong number of results"
