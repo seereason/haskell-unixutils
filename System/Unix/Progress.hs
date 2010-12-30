@@ -311,11 +311,11 @@ ePutStrLn = hPutStrLn stderr
 -- |If the current quietness level is less than one print a message.
 -- Control the quietness level using @quieter@.
 qPutStr :: String -> IO ()
-qPutStr s = quietness >>= \ q -> when (q <= 0) (ePutStr s)
+qPutStr s = quietness >>= \ q -> when (q < 0) (ePutStr s)
 
 -- |@qPutStr@ with a terminating newline.
 qPutStrLn :: String -> IO ()
-qPutStrLn s = quietness >>= \ q -> when (q <= 0) (ePutStrLn s)
+qPutStrLn s = quietness >>= \ q -> when (q < 0) (ePutStrLn s)
 
 -- |Print a message and return the second argument unevaluated.
 eMessage :: String -> a -> IO a
@@ -327,11 +327,11 @@ eMessageLn message output = ePutStrLn message >> return output
 
 -- |@eMessage@ controlled by the quietness level.
 qMessage :: String -> a -> IO a
-qMessage message output = quietness >>= \ q -> when (q <= 0) (ePutStr message) >> return output
+qMessage message output = quietness >>= \ q -> when (q < 0) (ePutStr message) >> return output
 
 -- |@qMessage@ with a terminating newline.
 qMessageLn :: String -> a -> IO a
-qMessageLn message output = quietness >>= \ q -> when (q <= 0) (ePutStrLn message) >> return output
+qMessageLn message output = quietness >>= \ q -> when (q < 0) (ePutStrLn message) >> return output
 
 tests :: [Test]
 tests =

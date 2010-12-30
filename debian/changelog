@@ -4,6 +4,8 @@ haskell-unixutils (1.33) unstable; urgency=low
   * Remove verbosity level that only prints stderr.  Its now 0=everthing, 
     1=command & dots & result, 2=command, 3=silent.  Note we are also
     omitting command & result.
+  * Make all the q functions (qPutStr, qMessage, etc) one step quieter,
+    so by default they only show up if you give a -v flag.
 
  -- David Fox <dsf@seereason.com>  Wed, 29 Dec 2010 15:42:33 -0800
 
