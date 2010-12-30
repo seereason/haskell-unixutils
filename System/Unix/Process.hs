@@ -6,10 +6,10 @@ module System.Unix.Process
     -- * Lazy process running
       Process
     , Output(Stdout, Stderr, Result)
-    , lazyRun		-- L.ByteString -> Process -> IO [Output]
-    , lazyCommand	-- String -> IO [Output]
+    , lazyRun		-- L.ByteString -> Process -> m [Output]
+    , lazyCommand	-- String -> m [Output]
     , lazyProcess	-- FilePath -> [String] -> Maybe FilePath
-			--     -> Maybe [(String, String)] -> IO [Output]
+			--     -> Maybe [(String, String)] -> m [Output]
     , stdoutOnly	-- [Output] -> L.ByteString
     , stderrOnly	-- [Output] -> L.ByteString
     , outputOnly	-- [Output] -> L.ByteString
@@ -33,6 +33,7 @@ module System.Unix.Process
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (liftM, filterM)
+import Control.Monad.Trans (MonadIO(liftIO))
 --import Control.Exception hiding (catch)
 --import Control.Parallel.Strategies (rnf)
 import Data.Char (isDigit)
@@ -111,24 +112,29 @@ uSecs = 8		-- minimum wait time, doubles each time nothing is ready
 maxUSecs = 100000	-- maximum wait time (microseconds)
 
 -- | Create a process with 'runInteractiveCommand' and run it with 'lazyRun'.
-lazyCommand :: String -> L.ByteString -> IO Outputs
-lazyCommand cmd input = runInteractiveCommand cmd >>= lazyRun input
+lazyCommand :: MonadIO m => String -> L.ByteString -> m Outputs
+lazyCommand cmd input = liftIO (runInteractiveCommand cmd) >>= lazyRun input
 
 -- | Create a process with 'runInteractiveProcess' and run it with 'lazyRun'.
-lazyProcess :: FilePath -> [String] -> Maybe FilePath
-            -> Maybe [(String, String)] -> L.ByteString -> IO Outputs
+lazyProcess :: MonadIO m =>
+               FilePath
+            -> [String]
+            -> Maybe FilePath
+            -> Maybe [(String, String)]
+            -> L.ByteString
+            -> m Outputs
 lazyProcess exec args cwd env input =
-    runInteractiveProcess exec args cwd env >>= lazyRun input
+    liftIO (runInteractiveProcess exec args cwd env) >>= lazyRun input
 
 -- | Take the tuple like that returned by 'runInteractiveProcess',
 -- create a process, send the list of inputs to its stdin and return
 -- the lazy list of 'Output' objects.
-lazyRun :: L.ByteString -> Process -> IO Outputs
+lazyRun :: MonadIO m => L.ByteString -> Process -> m Outputs
 lazyRun input (inh, outh, errh, pid) =
-    hSetBinaryMode inh True >>
-    hSetBinaryMode outh True >>
-    hSetBinaryMode errh True >>
-    elements (L.toChunks input, Just inh, Just outh, Just errh, [])
+    liftIO (hSetBinaryMode inh True >>
+            hSetBinaryMode outh True >>
+            hSetBinaryMode errh True >>
+            elements (L.toChunks input, Just inh, Just outh, Just errh, []))
     where
       elements :: ([B.ByteString], Maybe Handle, Maybe Handle, Maybe Handle, Outputs) -> IO Outputs
       -- EOF on both output descriptors, get exit code.  It can be

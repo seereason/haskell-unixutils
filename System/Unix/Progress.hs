@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, ScopedTypeVariables #-}
+{-# LANGUAGE PackageImports, RankNTypes, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing #-}
 -- |Control the progress reporting and output of subprocesses.
 module System.Unix.Progress
@@ -62,7 +62,7 @@ import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
 import Test.HUnit
 
 -- |A monad for controlling progress reporting of subprocesses.
-type Progress a = StateT (Set.Set ProgressFlag) IO a
+type Progress m a = MonadIO m => StateT (Set.Set ProgressFlag) m a
 
 -- |The flags that control what type of output will be sent to stdout
 -- and stderr.  Also, the ExceptionOnFail flag controls whether an
@@ -83,9 +83,10 @@ data ProgressFlag
 -- |Run the Progress monad with the given flags.  The flag set is
 -- compute from the current quietness level, <= 0 the most verbose
 -- and >= 3 the least.
-runProgress :: [ProgressFlag]  -- ^ Additional flags, such as FailOnFail
-            -> Progress a      -- ^ The progress task to be run
-            -> IO a
+runProgress :: MonadIO m =>
+               [ProgressFlag]  -- ^ Additional flags, such as FailOnFail
+            -> Progress m a      -- ^ The progress task to be run
+            -> m a
 runProgress flags action =
     quietness >>= \ q ->
     evalStateT action (Set.fromList (flags ++ quietFlags q))
@@ -98,47 +99,48 @@ runProgress flags action =
           | n == 2 = [Echo]
           | True   = []
 
-lazyCommandP :: [ProgressFlag] -> String -> L.ByteString -> IO [Output]
-lazyCommandP flags cmd input = runProgress flags (lift (lazyCommand cmd input) >>= doProgress cmd)
+lazyCommandP :: MonadIO m => [ProgressFlag] -> String -> L.ByteString -> m [Output]
+lazyCommandP flags cmd input =
+    runProgress flags (lift (lazyCommand cmd input) >>= doProgress cmd)
 
-lazyProcessP :: [ProgressFlag] -> FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+lazyProcessP :: MonadIO m => [ProgressFlag] -> FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessP flags exec args cwd env input =
     runProgress flags (lift (lazyProcess exec args cwd env input) >>= doProgress (intercalate " " (exec : args)))
 
-lazyCommandV :: String -> L.ByteString -> IO [Output]
+lazyCommandV :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandV = lazyCommandP []
 
-lazyProcessV :: FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+lazyProcessV :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessV = lazyProcessP []
 
-lazyCommandF :: String -> L.ByteString -> IO [Output]
+lazyCommandF :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandF = lazyCommandP [ExceptionOnFail]
 
-lazyProcessF :: FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+lazyProcessF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessF = lazyProcessP [ExceptionOnFail]
 
-lazyCommandE :: String -> L.ByteString -> IO [Output]
+lazyCommandE :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandE = lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail]
 
-lazyProcessE :: FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+lazyProcessE :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessE = lazyProcessP [EchoOnFail, AllOnFail, ResultOnFail]
 
-lazyCommandEF :: String -> L.ByteString -> IO [Output]
+lazyCommandEF :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandEF = lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail]
 
-lazyProcessEF :: FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> IO [Output]
+lazyProcessEF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessEF = lazyProcessP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail]
 
-lazyCommandD :: String -> L.ByteString -> IO [Output]
+lazyCommandD :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandD cmd input = quieter 1 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
 
-lazyCommandQ :: String -> L.ByteString -> IO [Output]
+lazyCommandQ :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandQ cmd input = quieter 3 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
 
-lazyCommandS :: String -> L.ByteString -> IO [Output]
+lazyCommandS :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandS cmd input = quieter 4 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail] cmd input
 
-lazyCommandSF :: String -> L.ByteString -> IO [Output]
+lazyCommandSF :: MonadIO m => String -> L.ByteString -> m [Output]
 lazyCommandSF cmd input = quieter 4 $ lazyCommandP [EchoOnFail, AllOnFail, ResultOnFail, ExceptionOnFail] cmd input
 
 -- |Look for occurrences of -v and -q in the command line arguments
@@ -146,8 +148,8 @@ lazyCommandSF cmd input = quieter 4 $ lazyCommandP [EchoOnFail, AllOnFail, Resul
 -- QUIETNESS to compute a new value for QUIETNESS.  If you want to
 -- ignore the current QUIETNESS value say @setQuietness 0 >>
 -- computeQuietness@.
-defaultQuietness :: IO Int
-defaultQuietness =
+defaultQuietness :: MonadIO m => m Int
+defaultQuietness = liftIO $
     do v1 <- try (getEnv "VERBOSITY" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
        v2 <- getArgs >>= return . length . filter (== "-v")
        q1 <- try (getEnv "QUIETNESS" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
@@ -156,11 +158,12 @@ defaultQuietness =
 
 -- |Look at the number of -v and -q arguments to get the baseline
 -- quietness / verbosity level for progress reporting.
-quietness :: IO Int
-quietness = try (getEnv "QUIETNESS" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
+quietness :: MonadIO m => m Int
+quietness = liftIO (try (getEnv "QUIETNESS" >>= return . read)) >>=
+            either (\ (_ :: SomeException) -> return 0) return
 
 -- |Perform a task with the given quietness level.
-modQuietness :: (Int -> Int) -> IO a -> IO a
+modQuietness :: MonadIO m => (Int -> Int) -> m a -> m a
 modQuietness f task =
     quietness >>= \ q0 ->
     setQuietness (f q0) >>
@@ -169,38 +172,38 @@ modQuietness f task =
     return result
     where
       -- Set the value of QUIETNESS in the environment.
-      setQuietness :: Int -> IO ()
-      setQuietness q = setEnv "QUIETNESS" (show q) True
+      setQuietness :: MonadIO m => Int -> m ()
+      setQuietness q = liftIO $ setEnv "QUIETNESS" (show q) True
 
 -- |Do an IO task with additional -v or -q arguments so that the
 -- progress reporting becomes more or less verbose.
-quieter :: Int -> IO a -> IO a
+quieter :: MonadIO m => Int -> m a -> m a
 quieter q task = modQuietness (+ q) task
 
 -- |Inject a command's output into the Progress monad, handling command echoing,
 -- output formatting, result code reporting, and exception on failure.
-doProgress :: String -> [Output] -> Progress [Output]
+doProgress :: MonadIO m => String -> [Output] -> Progress m [Output]
 doProgress cmd output =
     get >>= \ s ->
     doEcho s output >>= doOutput s >>= doResult s >>= doFail s
     where
       doEcho s output
           | Set.member Echo s || (Set.member EchoOnFail s && exitCodeOnly output /= ExitSuccess) =
-              lift (hPutStrLn stderr ("-> " ++ cmd)) >> return output
+              liftIO (ePutStrLn ("-> " ++ cmd)) >> return output
           | True = return output
       doOutput s output
           | Set.member All s || (Set.member AllOnFail s && exitCodeOnly output /= ExitSuccess) =
-              lift (printOutput (prefixes opre epre output))
+              liftIO (printOutput (prefixes opre epre output))
           | Set.member Dots s =
-              lift (dotOutput 128 output)
+              liftIO (dotOutput 128 output)
           | Set.member Errors s || (Set.member ErrorsOnFail s && exitCodeOnly output /= ExitSuccess) =
-              lift (printErrors (prefixes opre epre output))
+              liftIO (printErrors (prefixes opre epre output))
           | True = return output
       doResult s output
           | Set.member Result s || (Set.member ResultOnFail s && exitCodeOnly output /= ExitSuccess) =
-              lift (hPutStrLn stderr ("<- " ++ show (exitCodeOnly output))) >> return output
+              liftIO (ePutStrLn ("<- " ++ show (exitCodeOnly output))) >> return output
           | True = return output
-      doFail :: Set.Set ProgressFlag -> [Output] -> Progress [Output]
+      doFail :: MonadIO m => Set.Set ProgressFlag -> [Output] -> Progress m [Output]
       doFail s output
           | Set.member ExceptionOnFail s =
               case exitCodeOnly output of
@@ -211,7 +214,7 @@ doProgress cmd output =
       epre = B.pack " 2> "
 
 -- |Print one dot to stderr for every COUNT characters of output.
-dotOutput :: Int -> [Output] -> IO [Output]
+dotOutput :: MonadIO m => Int -> [Output] -> m [Output]
 dotOutput groupSize output =
     mapM (\ (count, elem) -> ePutStr (replicate count '.') >> return elem) pairs >>= eMessageLn ""
     where
@@ -252,22 +255,22 @@ prefixes opre epre output =
 -- |Print all the output to the appropriate output channel.  Each pair
 -- is the original input (to be returned) and the modified input (to
 -- be printed.)
-printOutput :: [(Output, Output)] -> IO [Output]
+printOutput :: MonadIO m => [(Output, Output)] -> m [Output]
 printOutput output =
-    mapM print' output
+    mapM (liftIO . print') output
     where
       print' (x, y) = print y >> return x
       print (Stdout s) = putStr (B.unpack s)
-      print (Stderr s) = hPutStr stderr (B.unpack s)
+      print (Stderr s) = ePutStr (B.unpack s)
       print _ = return ()
 
 -- |Print all the error output to the appropriate output channel
-printErrors :: [(Output, Output)] -> IO [Output]
+printErrors :: MonadIO m => [(Output, Output)] -> m [Output]
 printErrors output =
     mapM print' output
     where
       print' (x, y) = print y >> return x
-      print (Stderr s) = hPutStr stderr (B.unpack s)
+      print (Stderr s) = ePutStr (B.unpack s)
       print _ = return ()
 
 -- |Run a task and return the elapsed time along with its result.
@@ -279,7 +282,7 @@ timeTask x =
        return (result, diffUTCTime finish start)
 
 -- |Perform a task, print the elapsed time it took, and return the result.
-showElapsed :: String -> IO a -> IO a
+showElapsed :: MonadIO m => String -> m a -> m a
 showElapsed label f =
     do (result, time) <- timeTask f
        ePutStr (label ++ formatTime' time)
@@ -301,36 +304,36 @@ formatTime' diff = show diff
 -}
 
 -- |Send a string to stderr.
-ePutStr :: String -> IO ()
-ePutStr = hPutStr stderr
+ePutStr :: MonadIO m => String -> m ()
+ePutStr = liftIO . hPutStr stderr
 
 -- |@ePutStr@ with a terminating newline.
-ePutStrLn :: String -> IO ()
-ePutStrLn = hPutStrLn stderr
+ePutStrLn :: MonadIO m => String -> m ()
+ePutStrLn = liftIO . hPutStrLn stderr
 
 -- |If the current quietness level is less than one print a message.
 -- Control the quietness level using @quieter@.
-qPutStr :: String -> IO ()
+qPutStr :: MonadIO m => String -> m ()
 qPutStr s = quietness >>= \ q -> when (q < 0) (ePutStr s)
 
 -- |@qPutStr@ with a terminating newline.
-qPutStrLn :: String -> IO ()
+qPutStrLn :: MonadIO m => String -> m ()
 qPutStrLn s = quietness >>= \ q -> when (q < 0) (ePutStrLn s)
 
 -- |Print a message and return the second argument unevaluated.
-eMessage :: String -> a -> IO a
+eMessage :: MonadIO m => String -> a -> m a
 eMessage message output = ePutStr message >> return output
 
 -- |@eMessage@ with a terminating newline.
-eMessageLn :: String -> a -> IO a
+eMessageLn :: MonadIO m => String -> a -> m a
 eMessageLn message output = ePutStrLn message >> return output
 
 -- |@eMessage@ controlled by the quietness level.
-qMessage :: String -> a -> IO a
+qMessage :: MonadIO m => String -> a -> m a
 qMessage message output = quietness >>= \ q -> when (q < 0) (ePutStr message) >> return output
 
 -- |@qMessage@ with a terminating newline.
-qMessageLn :: String -> a -> IO a
+qMessageLn :: MonadIO m => String -> a -> m a
 qMessageLn message output = quietness >>= \ q -> when (q < 0) (ePutStrLn message) >> return output
 
 tests :: [Test]
