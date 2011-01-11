@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, PackageImports, RankNTypes, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing #-}
 -- |Control the progress reporting and output of subprocesses.
 module System.Unix.Progress
