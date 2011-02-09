@@ -12,7 +12,7 @@ module System.Unix.ProcessStrict
     ) where
     
 import Control.Exception hiding (catch)
-import Control.Parallel.Strategies (rnf)
+import Control.Parallel.Strategies (rdeepseq)
 import System.Process (waitForProcess, runInteractiveProcess, runInteractiveCommand)
 import System.IO (hSetBinaryMode, hClose, hGetContents)
 import System.Unix.Process
@@ -39,8 +39,8 @@ simpleProcess exec args =
        hClose inp
        outStr <- hGetContents out
        errStr <- hGetContents err
-       evaluate (rnf outStr) -- read output strictly
-       evaluate (rnf errStr) -- read stderr strictly
+       _ <- evaluate (rdeepseq outStr) -- read output strictly
+       _ <- evaluate (rdeepseq errStr) -- read stderr strictly
        ec <- waitForProcess pid
        return (outStr, errStr, ec)
 
@@ -64,8 +64,8 @@ simpleCommand cmd =
        hClose inp
        outStr <- hGetContents out
        errStr <- hGetContents err
-       evaluate (rnf outStr) -- read output strictly
-       evaluate (rnf errStr) -- read stderr strictly
+       _ <- evaluate (rdeepseq outStr) -- read output strictly
+       _ <- evaluate (rdeepseq errStr) -- read stderr strictly
        ec <- waitForProcess pid
        return (outStr, errStr, ec)
 
