@@ -1,3 +1,9 @@
+haskell-unixutils (1.36) unstable; urgency=low
+
+  * s/rnf/rdeepseq/
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Thu, 10 Feb 2011 15:15:51 -0600
+
 haskell-unixutils (1.35) unstable; urgency=low
 
   * Added FlexibleContexts to Progress.hs
