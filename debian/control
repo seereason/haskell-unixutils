@@ -3,20 +3,20 @@ Priority: optional
 Section: devel
 Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
 Build-Depends: debhelper (>= 4.0.0),
-               haskell-devscripts (>= 0.6.15), hscolour,
-               ghc6 (>=6.10),
-               ghc6-prof,
+               haskell-devscripts (>= 0.8.3), hscolour,
+               ghc (>=6.10),
+               ghc-prof,
                haddock,
-               ghc6-doc,
-               libghc6-hunit-prof,
-               libghc6-hunit-doc,
-               libghc6-regex-tdfa-prof,
-               libghc6-regex-tdfa-doc,
-               libghc6-parallel-prof,
-               libghc6-parallel-doc
+               ghc-doc,
+               libghc-hunit-prof,
+               libghc-hunit-doc,
+               libghc-regex-tdfa-prof,
+               libghc-regex-tdfa-doc,
+               libghc-parallel-prof,
+               libghc-parallel-doc
 Standards-Version: 3.7.2.0
 
-Package: libghc6-unixutils-dev
+Package: libghc-unixutils-dev
 Architecture: any
 Section: libdevel
 Depends: ${haskell:Depends}
@@ -29,10 +29,10 @@ Description: A crude interface between Haskell and Unix-like operating systems
   .
   This package contains the normal library files.
 
-Package: libghc6-unixutils-prof
+Package: libghc-unixutils-prof
 Architecture: any
 Section: libdevel
-Depends: ${haskell:Depends}, libghc6-unixutils-dev
+Depends: ${haskell:Depends}, libghc-unixutils-dev
 Description: A crude interface between Haskell and Unix-like operating systems
   A collection of useful and mildly useful functions that you might
   expect to find in System.* which a heavy bias towards Unix-type operating systems.
@@ -42,7 +42,7 @@ Description: A crude interface between Haskell and Unix-like operating systems
   .
   This package contains the libraries compiled with profiling enabled.
 
-Package: libghc6-unixutils-doc
+Package: libghc-unixutils-doc
 Architecture: any
 Section: libdevel
 Depends: ${haskell:Depends}
