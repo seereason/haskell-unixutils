@@ -1,7 +1,9 @@
 module System.Unix.Files where
 
-import System.Posix.Files
-import System.IO.Error
+import Control.Exception (catch)
+import Prelude hiding (catch)
+import System.Posix.Files (createSymbolicLink, removeLink)
+import System.IO.Error (isAlreadyExistsError)
 
 -- |calls 'createSymbolicLink' but will remove the target and retry if
 -- 'createSymbolicLink' raises EEXIST.
