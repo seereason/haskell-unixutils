@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures -Werror #-}
+{-# OPTIONS -Wwarn -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures #-}
 -- |functions for killing processes, running processes, etc
 module System.Unix.Process
     (
