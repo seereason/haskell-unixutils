@@ -10,7 +10,7 @@
 module System.Unix.QIO
     (
     -- * Get/set quietness levels
-    , defaultQuietness
+      defaultQuietness
     , quietness
     -- * Do task with modified quietness level
     , modQuietness
