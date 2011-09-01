@@ -8,9 +8,12 @@
 {-# LANGUAGE PackageImports, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -Werror #-}
 module System.Unix.QIO
-    (
+    ( ePutStr
+    , ePutStrLn
+    , eMessage
+    , eMessageLn
     -- * Get/set quietness levels
-      defaultQuietness
+    , defaultQuietness
     , quietness
     -- * Do task with modified quietness level
     , modQuietness
@@ -23,11 +26,22 @@ module System.Unix.QIO
     ) where
 
 import Control.Exception (try, SomeException)
-import Control.Monad (when)
 import "mtl" Control.Monad.Trans ( MonadIO, liftIO )
 import System.Environment (getArgs, getEnv)
 import System.IO (hPutStrLn, stderr, hPutStr)
 import System.Posix.Env (setEnv)
+
+ePutStr :: MonadIO m => String -> m ()
+ePutStr s = liftIO $ hPutStr stderr s
+
+ePutStrLn :: MonadIO m => String -> m ()
+ePutStrLn s = liftIO $ hPutStrLn stderr s
+
+eMessage :: MonadIO m => String -> b -> m b
+eMessage s x = liftIO (hPutStr stderr s) >> return x
+
+eMessageLn :: MonadIO m => String -> b -> m b
+eMessageLn s x = liftIO (hPutStrLn stderr s) >> return x
 
 -- | Compute an initial value for $QUIETNESS by examining the
 -- $QUIETNESS and $VERBOSITY variables and counting the -v and -q
@@ -65,21 +79,21 @@ quieter :: MonadIO m => Int -> m a -> m a
 quieter q task = modQuietness (+ q) task
 
 qDo :: MonadIO m => m () -> m ()
-qDo task = quieness >>= \ q -> if (q < 1) then task else return ()
+qDo task = quietness >>= \ q -> if (q < 1) then task else return ()
 
 -- |If the current quietness level is less than one print a message.
 -- Control the quietness level using @quieter@.
 qPutStr :: MonadIO m => String -> m ()
-qPutStr s = qDo (liftIO $ hPutStr stderr s)
+qPutStr s = qDo (ePutStr s)
 
 -- |@qPutStr@ with a terminating newline.
 qPutStrLn :: MonadIO m => String -> m ()
-qPutStrLn s = qDo (liftIO $ hPutStrLn stderr s)
+qPutStrLn s = qDo (ePutStrLn s)
 
 -- |@eMessage@ controlled by the quietness level.
 qMessage :: MonadIO m => String -> a -> m a
-qMessage message output = qDo (liftIO $ hPutStr stderr message) >> return output
+qMessage message output = qDo (ePutStr message) >> return output
 
 -- |@qMessage@ with a terminating newline.
 qMessageLn :: MonadIO m => String -> a -> m a
-qMessageLn message output = qDo (liftIO $ hPutStrLn stderr message) >> return output
+qMessageLn message output = qDo (ePutStrLn message) >> return output
