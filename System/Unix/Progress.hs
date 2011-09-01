@@ -1,37 +1,31 @@
+-- | Support for changing the output of a lazyCommand in several ways:
+-- 
+--     * Output a dot for every 128 characters of the original output
+-- 
+--     * Increase the quietness level before running the command
+-- 
+--     * Output only if (and when) the command fails
+-- 
+--     * Throw an exception if the command fails
+-- 
+--     * No output
 {-# LANGUAGE FlexibleContexts, PackageImports, RankNTypes, ScopedTypeVariables #-}
-{-# OPTIONS -Wall -fno-warn-name-shadowing #-}
--- |Control the progress reporting and output of subprocesses.
+{-# OPTIONS -Wall -Werror -fno-warn-name-shadowing #-}
 module System.Unix.Progress
     ( -- * The Progress Monad
       Progress
     , ProgressFlag(..)
     , quietnessLevels
+    , defaultLevels
     , runProgress
     -- * Process launching
     , lazyCommandP
     , lazyProcessP
-    -- * Quietness control
-    , defaultQuietness
-    , modQuietness
-    , quieter
-    -- * Output stream processing
-    -- , prefixes
-    -- , printOutput
-    -- , dotOutput
     , timeTask
     , showElapsed
-    , ePutStr
-    , ePutStrLn
-    , qPutStr
-    , qPutStrLn
-    , eMessage
-    , eMessageLn
-    , qMessage
-    , qMessageLn
     -- * Unit tests
     , tests
     -- * A set of lazyCommand functions for an example set of verbosity levels
-    , defaultLevels
     , lazyCommandV -- Print everything
     , lazyProcessV
     , lazyCommandF -- Like V, but throws exception on failure
@@ -46,8 +40,7 @@ module System.Unix.Progress
     , lazyCommandSF
     ) where
 
-import Control.Exception (evaluate, try, SomeException)
-import Control.Monad (when)
+import Control.Exception (evaluate)
 import Control.Monad.State (StateT, get, evalStateT)
 import "mtl" Control.Monad.Trans ( MonadIO, liftIO, lift )
 import Data.Array ((!), array, bounds)
@@ -57,12 +50,10 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import Data.List (intercalate)
 import qualified Data.Set as Set
 import Data.Time (NominalDiffTime, getCurrentTime, diffUTCTime)
-import System.Environment (getArgs, getEnv)
 import System.Exit (ExitCode(..))
-import System.IO (hPutStrLn, stderr, hPutStr)
-import System.Posix.Env (setEnv)
 import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
                             exitCodeOnly, stdoutOnly, mergeToStdout)
+import System.Unix.QIO (quietness, quieter, ePutStr, ePutStrLn, eMessageLn)
 import Test.HUnit
 
 type ProgressState = Set.Set ProgressFlag
@@ -104,6 +95,9 @@ runProgress :: MonadIO m =>
 runProgress flags action =
     quietness >>= evalStateT action . flags
 
+-- |The @P@ versions are the most general cases, here you can specify
+-- a function that turns the quietness level into any set of progress
+-- flags you like.
 lazyCommandP :: MonadIO m => (Int -> Set.Set ProgressFlag) -> String -> L.ByteString -> m [Output]
 lazyCommandP flags cmd input =
     runProgress flags (lift (lazyCommand cmd input) >>= doProgress cmd)
@@ -111,43 +105,6 @@ lazyCommandP flags cmd input =
 lazyProcessP :: MonadIO m => (Int -> Set.Set ProgressFlag) -> FilePath -> [String] -> Maybe FilePath -> Maybe [(String, String)] -> L.ByteString -> m [Output]
 lazyProcessP flags exec args cwd env input =
     runProgress flags (lift (lazyProcess exec args cwd env input) >>= doProgress (intercalate " " (exec : args)))
-
--- |Look for occurrences of -v and -q in the command line arguments
--- and the current values of environment variables VERBOSITY and
--- QUIETNESS to compute a new value for QUIETNESS.  If you want to
--- ignore the current QUIETNESS value say @setQuietness 0 >>
--- computeQuietness@.
-defaultQuietness :: MonadIO m => m Int
-defaultQuietness = liftIO $
-    do v1 <- try (getEnv "VERBOSITY" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
-       v2 <- getArgs >>= return . length . filter (== "-v")
-       q1 <- try (getEnv "QUIETNESS" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
-       q2 <- getArgs >>= return . length . filter (== "-q")
-       return $ q1 - v1 + q2 - v2
-
--- |Look at the number of -v and -q arguments to get the baseline
--- quietness / verbosity level for progress reporting.
-quietness :: MonadIO m => m Int
-quietness = liftIO (try (getEnv "QUIETNESS" >>= return . read)) >>=
-            either (\ (_ :: SomeException) -> return 0) return
-
--- |Perform a task with the given quietness level.
-modQuietness :: MonadIO m => (Int -> Int) -> m a -> m a
-modQuietness f task =
-    quietness >>= \ q0 ->
-    setQuietness (f q0) >>
-    task >>= \ result ->
-    setQuietness q0 >>
-    return result
-    where
-      -- Set the value of QUIETNESS in the environment.
-      setQuietness :: MonadIO m => Int -> m ()
-      setQuietness q = liftIO $ setEnv "QUIETNESS" (show q) True
-
--- |Do an IO task with additional -v or -q arguments so that the
--- progress reporting becomes more or less verbose.
-quieter :: MonadIO m => Int -> m a -> m a
-quieter q task = modQuietness (+ q) task
 
 -- |Inject a command's output into the Progress monad, handling command echoing,
 -- output formatting, result code reporting, and exception on failure.
@@ -271,39 +228,6 @@ formatTime' diff = show diff
       toMilliseconds :: (RealFrac a, Integral b) => a -> b
       toMilliseconds f = round (f * 1000)
 -}
-
--- |Send a string to stderr.
-ePutStr :: MonadIO m => String -> m ()
-ePutStr = liftIO . hPutStr stderr
-
--- |@ePutStr@ with a terminating newline.
-ePutStrLn :: MonadIO m => String -> m ()
-ePutStrLn = liftIO . hPutStrLn stderr
-
--- |If the current quietness level is less than one print a message.
--- Control the quietness level using @quieter@.
-qPutStr :: MonadIO m => String -> m ()
-qPutStr s = quietness >>= \ q -> when (q < 0) (ePutStr s)
-
--- |@qPutStr@ with a terminating newline.
-qPutStrLn :: MonadIO m => String -> m ()
-qPutStrLn s = quietness >>= \ q -> when (q < 0) (ePutStrLn s)
-
--- |Print a message and return the second argument unevaluated.
-eMessage :: MonadIO m => String -> a -> m a
-eMessage message output = ePutStr message >> return output
-
--- |@eMessage@ with a terminating newline.
-eMessageLn :: MonadIO m => String -> a -> m a
-eMessageLn message output = ePutStrLn message >> return output
-
--- |@eMessage@ controlled by the quietness level.
-qMessage :: MonadIO m => String -> a -> m a
-qMessage message output = quietness >>= \ q -> when (q < 0) (ePutStr message) >> return output
-
--- |@qMessage@ with a terminating newline.
-qMessageLn :: MonadIO m => String -> a -> m a
-qMessageLn message output = quietness >>= \ q -> when (q < 0) (ePutStrLn message) >> return output
 
 -- |Unit tests.
 tests :: [Test]

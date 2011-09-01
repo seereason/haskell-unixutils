@@ -1,5 +1,5 @@
 Name:           Unixutils
-Version:        1.37
+Version:        1.38
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw, David Fox
@@ -25,6 +25,7 @@ Exposed-modules:
         System.Unix.ProcessStrict,
         System.Unix.Progress,
         System.Unix.OldProgress,
+        System.Unix.QIO,
         System.Unix.Shadow,
         System.Unix.SpecialDevice,
         System.Unix.Files
