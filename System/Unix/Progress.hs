@@ -26,7 +26,7 @@ module System.Unix.Progress
     -- * Unit tests
     , tests
     -- * A set of lazyCommand functions for an example set of verbosity levels
-    , lazyCommandV -- Print everything
+    , lazyCommandV -- Print everything - command, stdout, stderr, result
     , lazyProcessV
     , lazyCommandF -- Like V, but throws exception on failure
     , lazyProcessF
@@ -110,28 +110,40 @@ lazyProcessP flags exec args cwd env input =
 -- output formatting, result code reporting, and exception on failure.
 doProgress :: MonadIO m => String -> [Output] -> Progress m [Output]
 doProgress cmd output =
-    get >>= \ s ->
-    doEcho s output >>= doOutput s >>= doResult s >>= doFail s
+    -- decrease quietness by two so we see everything by default.  The
+    -- command echoing is quieted by one below and the command output
+    -- is quieted by two.
+    quieter (- 2) $
+    get >>= \ flags ->
+    doEcho flags output >>= doOutput flags >>= doResult flags >>= doFail flags
     where
-      doEcho s output
-          | Set.member Echo s || (Set.member EchoOnFail s && exitCodeOnly output /= ExitSuccess) =
+      doEcho flags output
+          | Set.member Echo flags =
+              quieter 1 $ qPutStrLn ("-> " ++ cmd) >> return output
+          | Set.member EchoOnFail flags && exitCodeOnly output /= ExitSuccess =
               qPutStrLn ("-> " ++ cmd) >> return output
           | True = return output
-      doOutput s output
-          | Set.member All s || (Set.member AllOnFail s && exitCodeOnly output /= ExitSuccess) =
+      doOutput flags output
+          | Set.member All flags =
+              quieter 2 $ printOutput (prefixes opre epre output)
+          | Set.member AllOnFail flags && exitCodeOnly output /= ExitSuccess =
               printOutput (prefixes opre epre output)
-          | Set.member Dots s =
-              dotOutput 128 output
-          | Set.member Errors s || (Set.member ErrorsOnFail s && exitCodeOnly output /= ExitSuccess) =
+          | Set.member Dots flags =
+              quieter 1 $ dotOutput 128 output
+          | Set.member Errors flags =
+              quieter 2 $ printErrors (prefixes opre epre output)
+          | Set.member ErrorsOnFail flags && exitCodeOnly output /= ExitSuccess =
               printErrors (prefixes opre epre output)
           | True = return output
-      doResult s output
-          | Set.member Result s || (Set.member ResultOnFail s && exitCodeOnly output /= ExitSuccess) =
+      doResult flags output
+          | Set.member Result flags =
+              quieter 1 $ qPutStrLn ("<- " ++ show (exitCodeOnly output)) >> return output
+          | Set.member ResultOnFail flags && exitCodeOnly output /= ExitSuccess =
               qPutStrLn ("<- " ++ show (exitCodeOnly output)) >> return output
           | True = return output
       doFail :: MonadIO m => ProgressState -> [Output] -> Progress m [Output]
-      doFail s output
-          | Set.member ExceptionOnFail s =
+      doFail flags output
+          | Set.member ExceptionOnFail flags =
               case exitCodeOnly output of
                 ExitSuccess -> return output
                 result -> fail ("*** FAILURE: " ++ cmd ++ " -> " ++ show result)
@@ -291,13 +303,13 @@ lazyProcessEF :: MonadIO m => FilePath -> [String] -> Maybe FilePath -> Maybe [(
 lazyProcessEF = lazyProcessP flagsEF
 
 lazyCommandD :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandD cmd input = quieter 1 $ lazyCommandP flagsE cmd input
+lazyCommandD cmd input = lazyCommandP flagsE cmd input
 
 lazyCommandQ :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandQ cmd input = quieter 3 $ lazyCommandP flagsE cmd input
+lazyCommandQ cmd input = lazyCommandP flagsE cmd input
 
 lazyCommandS :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandS cmd input = quieter 4 $ lazyCommandP flagsE cmd input
+lazyCommandS cmd input = lazyCommandP flagsE cmd input
 
 lazyCommandSF :: MonadIO m => String -> L.ByteString -> m [Output]
-lazyCommandSF cmd input = quieter 4 $ lazyCommandP flagsEF cmd input
+lazyCommandSF cmd input = lazyCommandP flagsEF cmd input
