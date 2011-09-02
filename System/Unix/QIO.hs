@@ -18,6 +18,7 @@ module System.Unix.QIO
     -- * Do task with modified quietness level
     , modQuietness
     , quieter
+    , qZero
     -- * Do a task if quietness < 1
     , qDo
     -- * Output to stderr when quietness < 1
@@ -76,10 +77,15 @@ modQuietness f task =
       setQuietness :: MonadIO m => Int -> m ()
       setQuietness q = liftIO $ setEnv "QUIETNESS" (show q) True
 
--- |Increase quietness by N and do an IO task.
+-- |Perform an IO task with quietness increased by N.
 quieter :: MonadIO m => Int -> m a -> m a
 quieter q task = modQuietness (+ q) task
 
+-- |Perform an IO task with quietness set to zero.
+qZero :: MonadIO m => m a -> m a
+qZero task = modQuietness (const 0) task
+
+-- |Peform a task only if quietness < 1.
 qDo :: MonadIO m => m () -> m ()
 qDo task = quietness >>= \ q -> if (q < 1) then task else return ()
 
