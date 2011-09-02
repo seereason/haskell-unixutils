@@ -18,6 +18,8 @@ module System.Unix.QIO
     -- * Do task with modified quietness level
     , modQuietness
     , quieter
+    -- * Do a task if quietness < 1
+    , qDo
     -- * Output to stderr when quietness < 1
     , qPutStr
     , qPutStrLn

@@ -53,7 +53,7 @@ import Data.Time (NominalDiffTime, getCurrentTime, diffUTCTime)
 import System.Exit (ExitCode(..))
 import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
                             exitCodeOnly, stdoutOnly, mergeToStdout)
-import System.Unix.QIO (quietness, quieter, ePutStr, ePutStrLn)
+import System.Unix.QIO (quietness, quieter, qDo, qPutStr, qPutStrLn)
 import Test.HUnit
 
 type ProgressState = Set.Set ProgressFlag
@@ -115,19 +115,19 @@ doProgress cmd output =
     where
       doEcho s output
           | Set.member Echo s || (Set.member EchoOnFail s && exitCodeOnly output /= ExitSuccess) =
-              ePutStrLn ("-> " ++ cmd) >> return output
+              qPutStrLn ("-> " ++ cmd) >> return output
           | True = return output
       doOutput s output
           | Set.member All s || (Set.member AllOnFail s && exitCodeOnly output /= ExitSuccess) =
-              liftIO (printOutput (prefixes opre epre output))
+              printOutput (prefixes opre epre output)
           | Set.member Dots s =
-              liftIO (dotOutput 128 output)
+              dotOutput 128 output
           | Set.member Errors s || (Set.member ErrorsOnFail s && exitCodeOnly output /= ExitSuccess) =
-              liftIO (printErrors (prefixes opre epre output))
+              printErrors (prefixes opre epre output)
           | True = return output
       doResult s output
           | Set.member Result s || (Set.member ResultOnFail s && exitCodeOnly output /= ExitSuccess) =
-              ePutStrLn ("<- " ++ show (exitCodeOnly output)) >> return output
+              qPutStrLn ("<- " ++ show (exitCodeOnly output)) >> return output
           | True = return output
       doFail :: MonadIO m => ProgressState -> [Output] -> Progress m [Output]
       doFail s output
@@ -142,7 +142,7 @@ doProgress cmd output =
 -- |Print one dot to stderr for every COUNT characters of output.
 dotOutput :: MonadIO m => Int -> [Output] -> m [Output]
 dotOutput groupSize output =
-    mapM (\ (count, elem) -> ePutStr (replicate count '.') >> return elem) pairs >>= \ x -> ePutStr "\n" >> return x
+    mapM (\ (count, elem) -> qPutStr (replicate count '.') >> return elem) pairs >>= \ x -> qPutStr "\n" >> return x
     where
       pairs = zip (dots 0 (map length output)) output
       dots _ [] = []
@@ -186,8 +186,8 @@ printOutput output =
     mapM (liftIO . print') output
     where
       print' (x, y) = print y >> return x
-      print (Stdout s) = liftIO $ putStr (B.unpack s)
-      print (Stderr s) = ePutStr (B.unpack s)
+      print (Stdout s) = qDo $ liftIO $ putStr (B.unpack s)
+      print (Stderr s) = qPutStr (B.unpack s)
       print _ = return ()
 
 -- |Print all the error output to the appropriate output channel
@@ -196,7 +196,7 @@ printErrors output =
     mapM print' output
     where
       print' (x, y) = print y >> return x
-      print (Stderr s) = ePutStr (B.unpack s)
+      print (Stderr s) = qPutStr (B.unpack s)
       print _ = return ()
 
 -- |Run a task and return the elapsed time along with its result.
@@ -211,7 +211,7 @@ timeTask x =
 showElapsed :: MonadIO m => String -> m a -> m a
 showElapsed label f =
     do (result, time) <- timeTask f
-       ePutStr (label ++ formatTime' time)
+       qPutStr (label ++ formatTime' time)
        return result
 
 formatTime' :: NominalDiffTime -> String

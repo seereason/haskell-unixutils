@@ -1,3 +1,11 @@
+haskell-unixutils (1.39) unstable; urgency=low
+
+  * Export System.Unix.QIO.qDo
+  * Use the q functions for all output from the Progress module, including
+    the dots, the command lines, and the process output (stdout and stderr.)
+
+ -- David Fox <dsf@seereason.com>  Thu, 01 Sep 2011 19:13:38 -0700
+
 haskell-unixutils (1.38) unstable; urgency=low
 
   * Split System.Unix.QIO out of System.Unix.Progress.
