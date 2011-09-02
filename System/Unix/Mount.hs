@@ -44,21 +44,25 @@ rf path = lazyCommand ("cat '" ++ path ++ "'") empty >>= return . (\ (o, _, _) -
 -- in \/proc\/mounts, which means we need to run "umount \/proc\/bus\/usb".
 --
 -- See also: 'umountSucceeded'
-umountBelow :: FilePath -- ^ canonicalised, absolute path
+umountBelow :: Bool     -- ^ Lazy (umount -l flag) if true
+            -> FilePath -- ^ canonicalised, absolute path
             -> IO [(FilePath, (String, String, ExitCode))] -- ^ paths that we attempted to umount, and the responding output from the umount command
-umountBelow belowPath =
+umountBelow lazy belowPath =
     do procMount <- rf "/proc/mounts"
        let mountPoints = map (unescape . (!! 1) . words) (lines procMount)
            maybeMounts = filter (isPrefixOf belowPath) (concat (map tails mountPoints))
        needsUmount <- filterM isMountPoint maybeMounts
-       result <- mapM (\path -> umount [path,"-f","-l"] >>= return . ((,) path)) needsUmount
+       result <- mapM (\ path -> umount ([path,"-f"] ++ if lazy then ["-l"] else []) >>= return . ((,) path)) needsUmount >>= return . map fixNotMounted
        -- Did /proc/mounts change?  If so we should try again because
        -- nested mounts might have been revealed.
        procMount' <- rf "/proc/mounts"
        result' <- if procMount /= procMount' then
-                      umountBelow belowPath else
+                      umountBelow lazy belowPath else
                       return []
        return $ result ++ result'
+    where
+      fixNotMounted (path, ("", err, ExitFailure 1)) | err == ("umount: " ++ path ++ ": not mounted\n") = (path, ("", "" , ExitSuccess))
+      fixNotMounted x = x
 
 -- |umountSucceeded - predicated suitable for filtering results of 'umountBelow'
 umountSucceeded :: (FilePath, (String, String, ExitCode)) -> Bool
