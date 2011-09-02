@@ -1,3 +1,12 @@
+haskell-unixutils (1.40) unstable; urgency=low
+
+  * Add System.Unix.QIO.qZero
+  * Improve quietness handling in System.Unix.Progress
+  * Add a lazy flag to umountBelow to control use of umount(1) -l flag
+  * Don't fail umountBelow when umount gets a "not mounted" error.
+
+ -- David Fox <dsf@seereason.com>  Fri, 02 Sep 2011 13:16:34 -0700
+
 haskell-unixutils (1.39) unstable; urgency=low
 
   * Export System.Unix.QIO.qDo
