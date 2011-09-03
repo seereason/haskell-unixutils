@@ -154,7 +154,7 @@ doProgress cmd output =
 -- |Print one dot to stderr for every COUNT characters of output.
 dotOutput :: MonadIO m => Int -> [Output] -> m [Output]
 dotOutput groupSize output =
-    mapM (\ (count, elem) -> qPutStr (replicate count '.') >> return elem) pairs >>= \ x -> qPutStr "\n" >> return x
+    qPutStr "." >> mapM (\ (count, elem) -> qPutStr (replicate count '.') >> return elem) pairs >>= \ x -> qPutStr ".\n" >> return x
     where
       pairs = zip (dots 0 (map length output)) output
       dots _ [] = []
