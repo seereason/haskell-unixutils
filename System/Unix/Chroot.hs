@@ -20,7 +20,8 @@ import System.Posix.Env (getEnv)
 import System.Posix.IO
 import System.Posix.Directory
 import System.Unix.Process (Output(..))
-import System.Unix.Progress (quieter, lazyCommandF)
+import System.Unix.Progress (lazyCommandF)
+import System.Unix.QIO (quieter)
 
 foreign import ccall unsafe "chroot" c_chroot :: CString -> IO Int
 
