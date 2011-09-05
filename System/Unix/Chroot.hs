@@ -20,7 +20,7 @@ import System.Posix.Env (getEnv)
 import System.Posix.IO
 import System.Posix.Directory
 import System.Unix.Process (Output(..))
-import System.Unix.Progress (lazyCommandSF)
+import System.Unix.Progress (quieter, lazyCommandF)
 
 foreign import ccall unsafe "chroot" c_chroot :: CString -> IO Int
 
@@ -81,8 +81,7 @@ useEnv rootPath force action =
                    system' $ "umount " ++ escapePathForMount mountPoint
                    return result
       escapePathForMount = id	-- FIXME - Path arguments should be escaped
-      system' s =
-          lazyCommandSF s L.empty >> return ()
+      system' s = lazyCommandF s L.empty >> return ()
           -- system s >>= testcode
           -- where testcode (ExitFailure n) = error (show s ++ " -> " ++ show n)
           --       testcode ExitSuccess = return ()
