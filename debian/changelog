@@ -1,3 +1,19 @@
+haskell-unixutils (1.41) unstable; urgency=low
+
+  * Rename modQuietness (which takes an Int -> Int) to quieter, remove
+    original quieter and qZero function.
+  * Don't use any quietness stuff inside doProgress, it didn't make sense.
+  * Eliminate unnecessary state monad.
+  * Clarify interaction between All and AllOnFail, Error and ErrorOnFail.
+  * Print a failure message along with the output when AllOnFail or
+    ErrorOnFail is set.
+  * The command echoing and dot progress now appears by default (at
+    quietness 0.)  At quietness 1 the result is just the echoed command,
+    at 2 the result is silence.  Decreasing quietness by one gives full
+    output.
+
+ -- David Fox <dsf@seereason.com>  Mon, 05 Sep 2011 10:19:28 -0700
+
 haskell-unixutils (1.40) unstable; urgency=low
 
   * Add System.Unix.QIO.qZero
