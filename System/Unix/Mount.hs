@@ -53,9 +53,9 @@ umountBelow lazy belowPath = quieter (\x->x-9) $
     do procMount <- readFile "/proc/mounts"
        let mountPoints = map (unescape . (!! 1) . words) (lines procMount)
            maybeMounts = filter (isPrefixOf belowPath) (concat (map tails mountPoints))
-           args = ["-f"] ++ if lazy then ["-l"] else []
+           args path = ["-f"] ++ if lazy then ["-l"] else [] ++ [path]
        needsUmount <- filterM isMountPoint maybeMounts
-       results <- mapM (\ path -> qPutStrLn ("umountBelow: umount " ++ intercalate " " (path : args) ++ " " ++ path) >> umount args >>= return . ((,) path)) needsUmount
+       results <- mapM (\ path -> qPutStrLn ("umountBelow: umount " ++ intercalate " " (args path)) >> umount (args path) >>= return . ((,) path)) needsUmount
        let results' = map fixNotMounted results
        mapM_ (\ (result, result') -> qPutStrLn (show result ++ (if result /= result' then " -> " ++ show result' else ""))) (zip results results')
        -- Did /proc/mounts change?  If so we should try again because
