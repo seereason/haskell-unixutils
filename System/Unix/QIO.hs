@@ -13,12 +13,13 @@ module System.Unix.QIO
     , eMessage
     , eMessageLn
     -- * Get/set quietness levels
-    , defaultQuietness
+    , initialQuietness
     , quietness
     -- * Do task with modified quietness level
-    , modQuietness
+    -- , modQuietness
     , quieter
-    , qZero
+    , quieter'
+    -- , qZero
     -- * Do a task if quietness < 1
     , qDo
     -- * Output to stderr when quietness < 1
@@ -49,8 +50,8 @@ eMessageLn s x = liftIO (hPutStrLn stderr s) >> return x
 -- | Compute an initial value for $QUIETNESS by examining the
 -- $QUIETNESS and $VERBOSITY variables and counting the -v and -q
 -- options on the command line.
-defaultQuietness :: MonadIO m => m Int
-defaultQuietness = liftIO $
+initialQuietness :: MonadIO m => m Int
+initialQuietness = liftIO $
     do v1 <- try (getEnv "VERBOSITY" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
        v2 <- getArgs >>= return . length . filter (== "-v")
        q1 <- try (getEnv "QUIETNESS" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
@@ -62,11 +63,11 @@ quietness :: MonadIO m => m Int
 quietness = liftIO (try (getEnv "QUIETNESS" >>= return . read)) >>=
             either (\ (_ :: SomeException) -> return 0) return
 
--- |Perform a task with the quietness level returned by f.  Use
+-- |Perform a task with the quietness level tansformed by f.  Use
 -- @defaultQuietness >>= modQuietness . const@ to initialize the --
 -- verbosity for a program.
-modQuietness :: MonadIO m => (Int -> Int) -> m a -> m a
-modQuietness f task =
+quieter :: MonadIO m => (Int -> Int) -> m a -> m a
+quieter f task =
     quietness >>= \ q0 ->
     setQuietness (f q0) >>
     task >>= \ result ->
@@ -77,13 +78,11 @@ modQuietness f task =
       setQuietness :: MonadIO m => Int -> m ()
       setQuietness q = liftIO $ setEnv "QUIETNESS" (show q) True
 
--- |Perform an IO task with quietness increased by N.
-quieter :: MonadIO m => Int -> m a -> m a
-quieter q task = modQuietness (+ q) task
-
--- |Perform an IO task with quietness set to zero.
-qZero :: MonadIO m => m a -> m a
-qZero task = modQuietness (const 0) task
+-- |Dummy version of quieter, sometimes you want to strip out all the
+-- quieter calls and see how things look, then restore them gradually.
+-- Use this to help remember where they were.
+quieter' :: MonadIO m => (Int -> Int) -> m a -> m a
+quieter' _ x = x
 
 -- |Peform a task only if quietness < 1.
 qDo :: MonadIO m => m () -> m ()
