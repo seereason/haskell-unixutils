@@ -49,7 +49,7 @@ import System.Unix.Process
 umountBelow :: Bool     -- ^ Lazy (umount -l flag) if true
             -> FilePath -- ^ canonicalised, absolute path
             -> IO [(FilePath, (String, String, ExitCode))] -- ^ paths that we attempted to umount, and the responding output from the umount command
-umountBelow lazy belowPath = quieter (- 9) $
+umountBelow lazy belowPath = quieter (\x->x-9) $
     do procMount <- readFile "/proc/mounts"
        let mountPoints = map (unescape . (!! 1) . words) (lines procMount)
            maybeMounts = filter (isPrefixOf belowPath) (concat (map tails mountPoints))
