@@ -106,12 +106,16 @@ lazyProcessEF cmd args wd env input =
 -- dots or the result code, and if it is 2 we don't see anything.
 progressFlags :: MonadIO m => Set.Set ProgressFlag -> m (Set.Set ProgressFlag)
 progressFlags extra =
-    quietness >>= return . Set.union extra . Set.fromList . flags
+    quietness >>= return . merge extra . Set.fromList . flags
     where
       flags n | n < 0 = [Echo, All, Result]
       flags 0 = [Echo, Dots, Result]
       flags 1 = [Echo]
       flags _ = []
+      merge extra flags =
+          (if Set.member All flags then Set.delete AllOnFail else id) .
+          (if Set.member Echo flags then Set.delete EchoOnFail else id) .
+          (if Set.member Result flags then Set.delete ResultOnFail else id) $ Set.union extra flags
 
 {-
 defaultLevels :: Int -> Set.Set ProgressFlag
