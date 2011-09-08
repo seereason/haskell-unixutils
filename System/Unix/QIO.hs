@@ -128,5 +128,5 @@ v2 a = quieter (\x->x-2) a
 v3 a = quieter (\x->x-3) a
 
 -- |For debugging
-showQ :: String -> m a -> m a
+showQ :: MonadIO m => String -> m a -> m a
 showQ s a = quietness >>= \ n -> ePutStrLn (s ++ ": quietness=" ++ show n) >> a
