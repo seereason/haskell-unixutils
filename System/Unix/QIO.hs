@@ -27,6 +27,12 @@ module System.Unix.QIO
     , qPutStrLn
     , qMessage
     , qMessageLn
+    -- * Some idioms
+    , q12
+    , q02
+    , v1
+    , v2
+    , v3
     ) where
 
 import Control.Exception (try, SomeException)
@@ -104,3 +110,18 @@ qMessage message output = qDo (ePutStr message) >> return output
 -- |@qMessage@ with a terminating newline.
 qMessageLn :: MonadIO m => String -> a -> m a
 qMessageLn message output = qDo (ePutStrLn message) >> return output
+
+-- |Print a message at quietness +1 and then do a task at quietness +3.
+-- This is a pattern which gives the following behaviors:
+-- Normally there is no output.  With -v only the messages are printed.
+-- With -v -v the messages and the shell commands are printed with dots
+-- to show progress.  With -v -v -v everything is printed.
+q12 :: MonadIO m => String -> m a -> m a
+q12 s a = quieter (+ 1) $ qPutStrLn s >> quieter (+ 2) a
+
+q02 :: MonadIO m => String -> m a -> m a
+q02 s a = qPutStrLn s >> quieter (+ 2) a
+
+v1 a = quieter (\x->x-1) a
+v2 a = quieter (\x->x-2) a
+v3 a = quieter (\x->x-3) a
