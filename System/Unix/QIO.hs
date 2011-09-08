@@ -6,7 +6,7 @@
 -- quietness level for entire regions of your program and messages
 -- only appear when quietness is less than one.
 {-# LANGUAGE PackageImports, ScopedTypeVariables #-}
-{-# OPTIONS -Wall -Werror -fno-warn-name-shadowing #-}
+{-# OPTIONS -Wall #-}
 module System.Unix.QIO
     ( ePutStr
     , ePutStrLn
