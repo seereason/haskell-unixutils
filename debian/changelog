@@ -1,3 +1,10 @@
+haskell-unixutils (1.42) unstable; urgency=low
+
+  * Add idioms q12, q02, v1, v2, v2
+  * Add debugging function showQ
+
+ -- David Fox <dsf@seereason.com>  Thu, 08 Sep 2011 08:40:29 -0700
+
 haskell-unixutils (1.41) unstable; urgency=low
 
   * Rename modQuietness (which takes an Int -> Int) to quieter, remove

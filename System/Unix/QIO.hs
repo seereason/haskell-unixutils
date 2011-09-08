@@ -33,6 +33,7 @@ module System.Unix.QIO
     , v1
     , v2
     , v3
+    , showQ
     ) where
 
 import Control.Exception (try, SomeException)
@@ -125,3 +126,7 @@ q02 s a = qPutStrLn s >> quieter (+ 2) a
 v1 a = quieter (\x->x-1) a
 v2 a = quieter (\x->x-2) a
 v3 a = quieter (\x->x-3) a
+
+-- |For debugging
+showQ :: String -> m a -> m a
+showQ s a = quietness >>= \ n -> ePutStrLn (s ++ ": quietness=" ++ show n) >> a
