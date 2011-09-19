@@ -56,8 +56,12 @@ fchroot path action =
 -- dir inside the chroot (and umount it when we exit the chroot.
 useEnv :: FilePath -> (a -> IO a) -> IO a -> IO a
 useEnv rootPath force action =
-    q12 ("Entering environment at " ++ rootPath) $
-    do sockPath <- getEnv "SSH_AUTH_SOCK"
+    do -- In order to minimize confusion, this QIO message is output
+       -- at default quietness.  If you want to suppress it while seeing
+       -- the output from your action, you need to say something like
+       -- quieter (+ 1) (useEnv (quieter (\x->x-1) action))
+       qPutStrLn $ "Entering environment at " ++ rootPath
+       sockPath <- getEnv "SSH_AUTH_SOCK"
        home <- getEnv "HOME"
        copySSH home
        -- We need to force the output before we exit the changeroot.
@@ -65,7 +69,6 @@ useEnv rootPath force action =
        -- agent and we get errors.
        withSock sockPath . fchroot rootPath $ (action >>= force)
     where
-      q12 s x = quieter (+ 1) $ qPutStrLn s >> quieter (+ 2) x
       copySSH Nothing = return ()
       copySSH (Just home) =
           -- Do NOT preserve ownership, files must be owned by root.
