@@ -34,7 +34,7 @@ md5sum path = Data.ByteString.Lazy.Char8.readFile path >>= return . show . md5
         _ -> error ("Error running 'md5sum " ++ path ++ "'")
 -}
 
-{-# DEPRECATED gzip "Use Data.ByteString.Lazy.Char8.readFile path >>= Data.ByteString.Lazy.Char8.writeFile (path ++ ".gz")" #-}
+{-# DEPRECATED gzip "Use Data.ByteString.Lazy.Char8.readFile path >>= Data.ByteString.Lazy.Char8.writeFile (path ++ \".gz\")" #-}
 gzip :: FilePath -> IO ()
 gzip path = Data.ByteString.Lazy.Char8.readFile path >>= Data.ByteString.Lazy.Char8.writeFile (path ++ ".gz")
 {-
