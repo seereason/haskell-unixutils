@@ -13,7 +13,11 @@ Build-Depends: debhelper (>= 4.0.0),
                libghc-regex-tdfa-prof,
                libghc-regex-tdfa-doc,
                libghc-parallel-prof,
-               libghc-parallel-doc
+               libghc-parallel-doc,
+               libghc-puremd5-prof,
+               libghc-puremd5-doc,
+               libghc-zlib-prof,
+               libghc-zlib-doc
 Standards-Version: 3.7.2.0
 
 Package: libghc-unixutils-dev
