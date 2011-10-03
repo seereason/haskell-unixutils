@@ -7,7 +7,9 @@ module System.Unix.Misc
     where
 
 import Control.Exception
-import Data.ByteString.Lazy.Char8 (empty)
+import qualified Codec.Compression.GZip
+import Data.ByteString.Lazy.Char8 (empty, readFile, writeFile)
+import Data.Digest.Pure.MD5 (md5)
 import Data.Maybe
 import System.Cmd
 import System.Directory
@@ -17,8 +19,10 @@ import System.Posix.Files
 import System.Process
 import System.Unix.Process
 
+{-# DEPRECATED md5sum "Use Data.ByteString.Lazy.Char8.readFile path >>= return . show . Data.Digest.Pure.MD5.md5" #-}
 md5sum :: FilePath -> IO String
-md5sum path =
+md5sum path = Data.ByteString.Lazy.Char8.readFile path >>= return . show . md5
+{-
     do
       (text, _, exitCode) <- lazyProcess "md5sum" [path] Nothing Nothing empty >>= return . collectOutputUnpacked
       let output = listToMaybe (words text)
@@ -28,12 +32,15 @@ md5sum path =
               Nothing -> error ("Error in output of 'md5sum " ++ path ++ "'")
               Just checksum -> return checksum
         _ -> error ("Error running 'md5sum " ++ path ++ "'")
+-}
 
-{-# WARNING gzip "System.Unix.Misc.gzip does not properly escape its path arguments" #-}
+{-# DEPRECATED gzip "Use Data.ByteString.Lazy.Char8.readFile path >>= Data.ByteString.Lazy.Char8.writeFile (path ++ ".gz")" #-}
 gzip :: FilePath -> IO ()
-gzip path =
+gzip path = Data.ByteString.Lazy.Char8.readFile path >>= Data.ByteString.Lazy.Char8.writeFile (path ++ ".gz")
+{-
     do
       result <- system ("gzip < " ++ path ++ " > " ++ path ++ ".gz")
       case result of
         ExitSuccess -> return ()
         e -> error (show e)
+-}
