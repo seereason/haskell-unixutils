@@ -1,3 +1,9 @@
+haskell-unixutils (1.44) unstable; urgency=low
+
+  * Use pure versions of gzip and md5
+
+ -- David Fox <dsf@seereason.com>  Mon, 03 Oct 2011 12:58:51 -0700
+
 haskell-unixutils (1.43) unstable; urgency=low
 
   * Remove the call to q12 from Chroot.useEnv, just output the progress
