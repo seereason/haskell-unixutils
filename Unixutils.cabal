@@ -29,7 +29,6 @@ Exposed-modules:
         System.Unix.Shadow,
         System.Unix.SpecialDevice,
         System.Unix.Files
-Extra-libraries: crypt
 
 -- For more complex build options see:
 -- http://www.haskell.org/ghc/docs/latest/html/Cabal/
