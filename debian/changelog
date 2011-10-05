@@ -1,3 +1,9 @@
+haskell-unixutils (1.46) unstable; urgency=low
+
+  * Add dependencies on libcrypto++.
+
+ -- David Fox <dsf@seereason.com>  Wed, 05 Oct 2011 13:36:54 -0700
+
 haskell-unixutils (1.45) unstable; urgency=low
 
   * Add the main function for the unit tests.
