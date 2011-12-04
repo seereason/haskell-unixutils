@@ -18,8 +18,7 @@ Build-Depends: debhelper (>= 7.0),
                libghc-regex-tdfa-dev,
                libghc-regex-tdfa-prof,
                libghc-zlib-dev,
-               libghc-zlib-prof,
-               libcrypt-dev
+               libghc-zlib-prof
 Build-Depends-Indep: ghc-doc,
                      libghc-hunit-doc,
                      libghc-mtl-doc,
