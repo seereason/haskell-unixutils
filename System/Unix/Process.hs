@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PackageImports, ScopedTypeVariables #-}
 {-# OPTIONS -Wwarn -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures #-}
 -- |functions for killing processes, running processes, etc
 module System.Unix.Process
@@ -32,8 +32,8 @@ module System.Unix.Process
     ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Monad (liftM, filterM)
-import Control.Monad.Trans (MonadIO(liftIO))
+import "mtl" Control.Monad (liftM, filterM)
+import "mtl" Control.Monad.Trans (MonadIO(liftIO))
 --import Control.Exception hiding (catch)
 --import Control.Parallel.Strategies (rnf)
 import Data.Char (isDigit)
