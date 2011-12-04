@@ -1,29 +1,43 @@
 Source: haskell-unixutils
-Priority: optional
-Section: devel
-Maintainer: Jack Donaldson <jack.donaldson@freespire.org>
-Build-Depends: debhelper (>= 4.0.0),
-               haskell-devscripts (>= 0.8.3), hscolour,
-               ghc (>=6.10),
+Priority: extra
+Section: haskell
+Maintainer: David Fox <dsf@seereason.com>
+Build-Depends: debhelper (>= 7.0),
+               haskell-devscripts (>= 0.8),
+               cdbs,
+               ghc,
                ghc-prof,
-               haddock,
-               ghc-doc,
+               libghc-hunit-dev,
                libghc-hunit-prof,
-               libghc-hunit-doc,
-               libghc-regex-tdfa-prof,
-               libghc-regex-tdfa-doc,
-               libghc-parallel-prof,
-               libghc-parallel-doc,
+               libghc-mtl-dev,
+               libghc-mtl-prof,
+               libghc-parallel-dev (>= 2),
+               libghc-parallel-prof (>= 2),
+               libghc-puremd5-dev,
                libghc-puremd5-prof,
-               libghc-puremd5-doc,
+               libghc-regex-tdfa-dev,
+               libghc-regex-tdfa-prof,
+               libghc-zlib-dev,
                libghc-zlib-prof,
-               libghc-zlib-doc
-Standards-Version: 3.7.2.0
+               libcrypt-dev
+Build-Depends-Indep: ghc-doc,
+                     libghc-hunit-doc,
+                     libghc-mtl-doc,
+                     libghc-parallel-doc (>= 2),
+                     libghc-puremd5-doc,
+                     libghc-regex-tdfa-doc,
+                     libghc-zlib-doc
+Standards-Version: 3.9.1
+Homepage: http://src.seereason.com/haskell-unixutils
 
 Package: libghc-unixutils-dev
 Architecture: any
-Section: libdevel
-Depends: ${haskell:Depends}
+Depends: ${shlibs:Depends},
+         ${haskell:Depends},
+         ${misc:Depends}
+Recommends: ${haskell:Recommends}
+Suggests: ${haskell:Suggests}
+Provides: ${haskell:Provides}
 Description: A crude interface between Haskell and Unix-like operating systems
   A collection of useful and mildly useful functions that you might
   expect to find in System.* which a heavy bias towards Unix-type operating systems.
@@ -51,10 +65,10 @@ Architecture: any
 Section: libdevel
 Depends: ${haskell:Depends}
 Description: A crude interface between Haskell and Unix-like operating systems
-  A collection of useful and mildly useful functions that you might
-  expect to find in System.* which a heavy bias towards Unix-type operating systems.
-  .
-  Author: David Fox
-  Upstream-Maintainer: jeremy@seereason.com
-  .
-  This package contains the documentation files.
+ A collection of useful and mildly useful functions that you might
+ expect to find in System.* which a heavy bias towards Unix-type operating systems.
+ .
+  Author: Jeremy Shaw, David Fox
+  Upstream-Maintainer: jeremy@n-heptane.com
+ .
+ This package contains the documentation files.
