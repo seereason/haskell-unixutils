@@ -32,7 +32,7 @@ module System.Unix.Process
     ) where
 
 import Control.Concurrent (threadDelay)
-import "mtl" Control.Monad (liftM, filterM)
+import Control.Monad (liftM, filterM)
 import "mtl" Control.Monad.Trans (MonadIO(liftIO))
 --import Control.Exception hiding (catch)
 --import Control.Parallel.Strategies (rnf)
