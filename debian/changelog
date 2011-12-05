@@ -1,3 +1,9 @@
+haskell-unixutils (1.47) unstable; urgency=low
+
+  * Specify that monad modules should come from mtl.
+
+ -- David Fox <dsf@seereason.com>  Sun, 04 Dec 2011 19:00:37 -0800
+
 haskell-unixutils (1.46) unstable; urgency=low
 
   * Add dependencies on libcrypto++.
