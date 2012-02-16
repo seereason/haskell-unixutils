@@ -1,3 +1,10 @@
+haskell-unixutils (1.47.1) unstable; urgency=low
+
+  * Added Executable section so that Tests.hs gets included in the tarball
+  * Updated to newer cabal file format
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Thu, 16 Feb 2012 17:28:41 -0600
+
 haskell-unixutils (1.47) unstable; urgency=low
 
   * Specify that monad modules should come from mtl.

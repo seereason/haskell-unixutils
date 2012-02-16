@@ -1,19 +1,22 @@
 Name:           Unixutils
-Version:        1.47
+Version:        1.47.1
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw, David Fox
 Homepage:       http://src.seereason.com/haskell-unixutils
 Category:	System
-Build-Depends:  array, base >= 4 && <5, containers, mtl, HUnit, unix, regex-tdfa, process < 3, bytestring, directory, time, old-time, parallel >= 2, filepath, pureMD5, zlib
 Synopsis:       A crude interface between Haskell and Unix-like operating systems
 Maintainer:     jeremy@n-heptane.com
 Description:
  A collection of useful and mildly useful functions that you might
  expect to find in System.* which a heavy bias towards Unix-type operating systems.
 Build-type:	Simple
-ghc-options:	-O2
-Exposed-modules:
+Cabal-Version: >= 1.2
+
+Library 
+    Build-Depends:  array, base >= 4 && <5, containers, mtl, HUnit, unix, regex-tdfa, process < 3, bytestring, directory, time, old-time, parallel >= 2, filepath, pureMD5, zlib
+    ghc-options:	-O2
+    Exposed-modules:
         System.Unix.Chroot,
         System.Unix.Crypt,
         System.Unix.Directory,
@@ -29,7 +32,11 @@ Exposed-modules:
         System.Unix.Shadow,
         System.Unix.SpecialDevice,
         System.Unix.Files
-Extra-libraries: crypt
+    Extra-libraries: crypt
+
+Executable unixtutils-test
+    Main-is: Tests.hs
+    Buildable: False
 
 -- For more complex build options see:
 -- http://www.haskell.org/ghc/docs/latest/html/Cabal/
