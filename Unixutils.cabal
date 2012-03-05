@@ -1,5 +1,5 @@
 Name:           Unixutils
-Version:        1.47.1
+Version:        1.48.1
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw, David Fox
@@ -29,14 +29,11 @@ Library
         System.Unix.Progress,
         System.Unix.OldProgress,
         System.Unix.QIO,
-        System.Unix.Shadow,
         System.Unix.SpecialDevice,
         System.Unix.Files
-    Extra-libraries: crypt
+    if !os(darwin)
+        Extra-libraries: crypt
 
 Executable unixtutils-test
     Main-is: Tests.hs
     Buildable: False
-
--- For more complex build options see:
--- http://www.haskell.org/ghc/docs/latest/html/Cabal/

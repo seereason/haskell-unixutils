@@ -59,11 +59,11 @@ eMessageLn s x = liftIO (hPutStrLn stderr s) >> return x
 -- options on the command line.
 initialQuietness :: MonadIO m => m Int
 initialQuietness = liftIO $
-    do v1 <- try (getEnv "VERBOSITY" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
-       v2 <- getArgs >>= return . length . filter (== "-v")
+    do v1' <- try (getEnv "VERBOSITY" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
+       v2' <- getArgs >>= return . length . filter (== "-v")
        q1 <- try (getEnv "QUIETNESS" >>= return . read) >>= either (\ (_ :: SomeException) -> return 0) return
        q2 <- getArgs >>= return . length . filter (== "-q")
-       return $ q1 - v1 + q2 - v2
+       return $ q1 - v1' + q2 - v2'
 
 -- |Get the current quietness level from the QUIETNESS environment variable.
 quietness :: MonadIO m => m Int
@@ -123,6 +123,7 @@ q12 s a = quieter (+ 1) $ qPutStrLn s >> quieter (+ 2) a
 q02 :: MonadIO m => String -> m a -> m a
 q02 s a = qPutStrLn s >> quieter (+ 2) a
 
+v1, v2, v3 :: (MonadIO m) => m a -> m a
 v1 a = quieter (\x->x-1) a
 v2 a = quieter (\x->x-2) a
 v3 a = quieter (\x->x-3) a
