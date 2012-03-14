@@ -1,0 +1,27 @@
+Name:           progress
+Version:        1.48
+License:        BSD3
+License-File:	COPYING
+Author:         David Fox
+Homepage:       http://src.seereason.com/progress
+Category:	System
+Build-Depends:  array, base >= 4 && <5, containers, mtl, HUnit, unix, regex-tdfa, process < 3, bytestring, directory, time, old-time, parallel >= 2, filepath, pureMD5, zlib
+Synopsis:       Run commands and processes and control their progress reporting
+Maintainer:     dsf@seereason.com
+Description:    Run commands and processes and control their progress reporting.  Support
+                for numerical quietness levels is included, and control over whether we
+                see all the output, all the output when an error occurs, dots representing
+                the amount of output produced, or no output at all.
+Build-type:	Simple
+ghc-options:	-O2
+Exposed-modules:
+        System.Unix.Process,
+        System.Unix.ProcessExtra,
+        System.Unix.ProcessStrict,
+        System.Unix.Progress,
+        System.Unix.OldProgress,
+        System.Unix.QIO
+Extra-libraries: crypt
+
+-- For more complex build options see:
+-- http://www.haskell.org/ghc/docs/latest/html/Cabal/
