@@ -3,8 +3,8 @@
 module System.Unix.Chroot
     ( fchroot
     , useEnv
-    , forceList
-    , forceList'
+    -- , forceList  -- moved to progress
+    -- , forceList'
     ) where
 
 import Control.Exception (finally, evaluate)
@@ -14,16 +14,20 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import Foreign.C.Error
 import Foreign.C.String
 import System.Directory (createDirectoryIfMissing)
+import System.Exit (ExitCode(ExitSuccess))
 import System.FilePath (dropTrailingPathSeparator, dropFileName)
 import System.IO (hPutStr, stderr)
 import System.Posix.Env (getEnv)
 import System.Posix.IO
 import System.Posix.Directory
-import System.Unix.Process (Output(..))
-import System.Unix.Progress (lazyCommandF)
-import System.Unix.QIO (quieter, qPutStrLn)
+import System.Process (readProcessWithExitCode, showCommandForUser)
 
 foreign import ccall unsafe "chroot" c_chroot :: CString -> IO Int
+
+{-# DEPRECATED forceList "If you need forceList enable it in progress-System.Unix.Process." #-}
+forceList = undefined
+{-# DEPRECATED forceList' "If you need forceList' enable it in progress-System.Unix.Process." #-}
+forceList' = undefined
 
 -- |chroot changes the root directory to filepath
 -- NOTE: it does not change the working directory, just the root directory
@@ -60,7 +64,6 @@ useEnv rootPath force action =
        -- at default quietness.  If you want to suppress it while seeing
        -- the output from your action, you need to say something like
        -- quieter (+ 1) (useEnv (quieter (\x->x-1) action))
-       qPutStrLn $ "Entering environment at " ++ rootPath
        sockPath <- getEnv "SSH_AUTH_SOCK"
        home <- getEnv "HOME"
        copySSH home
@@ -72,43 +75,26 @@ useEnv rootPath force action =
       copySSH Nothing = return ()
       copySSH (Just home) =
           -- Do NOT preserve ownership, files must be owned by root.
-          system' ("rsync -rlptgDHxS --delete " ++ home ++ "/.ssh/ " ++ rootPath ++ "/root/.ssh")
+          run "/usr/bin/rsync" ["--delete", home ++ "/.ssh/", rootPath ++ "/root/.ssh"]
       withSock Nothing action = action
       withSock (Just sockPath) action =
           withMountBind dir (rootPath ++ dir) action
           where dir = dropTrailingPathSeparator (dropFileName sockPath)
       withMountBind toMount mountPoint action =
-          doMount
-          where
-            doMount =
-                do createDirectoryIfMissing True mountPoint
-                   system' $ "mount --bind " ++ escapePathForMount toMount ++ " " ++ escapePathForMount mountPoint
-                   result <- action
-                   system' $ "umount " ++ escapePathForMount mountPoint
-                   return result
+          do createDirectoryIfMissing True mountPoint
+             run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
+             result <- action
+             run "/bin/umount" [escapePathForMount mountPoint]
+             return result
       escapePathForMount = id	-- FIXME - Path arguments should be escaped
-      system' s = lazyCommandF s L.empty >> return ()
-          -- system s >>= testcode
-          -- where testcode (ExitFailure n) = error (show s ++ " -> " ++ show n)
-          --       testcode ExitSuccess = return ()
 
--- |A function to force the process output by examining it but not
--- printing anything.
-forceList :: [a] -> IO [a]
-forceList output = evaluate (length output) >> return output
-
--- |First send the process output to the and then force it.
-forceList' :: [Output] -> IO [Output]
-forceList' output = printOutput output >>= forceList
-
--- |Print all the output to the appropriate output channel
-printOutput :: [Output] -> IO [Output]
-printOutput output =
-    mapM print output
-    where
-      print x@(Stdout s) = putStr (B.unpack s) >> return x
-      print x@(Stderr s) = hPutStr stderr (B.unpack s) >> return x
-      print x = return x
+      run cmd args =
+          do (code, out, err) <- readProcessWithExitCode cmd args ""
+             case code of
+               ExitSuccess -> return ()
+               _ -> error ("Exception in System.Unix.Chroot.useEnv: " ++ showCommandForUser cmd args ++ " -> " ++ show code ++
+                           "\n\nstdout:\n " ++ prefix "> " out ++ "\n\nstderr:\n" ++ prefix "> " err)
+      prefix pre s = unlines (map (pre ++) (lines s))
 
 {-
 printDots :: Int -> [Output] -> IO [Output]

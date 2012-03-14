@@ -12,14 +12,11 @@ import Data.ByteString.Lazy.Char8 (empty)
 import Data.List
 import System.Directory
 import System.Exit
-import System.IO (readFile)
+import System.IO (readFile, hPutStrLn, stderr)
 import System.Posix.Files
-import System.Unix.Process
-import System.Unix.QIO (quieter, qPutStrLn)
+import System.Process (readProcessWithExitCode)
 
 -- Local Modules
-
-import System.Unix.Process
 
 -- In ghc610 readFile "/proc/mounts" hangs.  Use this instead.
 -- rf path = lazyCommand ("cat '" ++ path ++ "'") empty >>= return . (\ (o, _, _) -> o) . collectOutputUnpacked
@@ -48,23 +45,23 @@ import System.Unix.Process
 -- See also: 'umountSucceeded'
 umountBelow :: Bool     -- ^ Lazy (umount -l flag) if true
             -> FilePath -- ^ canonicalised, absolute path
-            -> IO [(FilePath, (String, String, ExitCode))] -- ^ paths that we attempted to umount, and the responding output from the umount command
-umountBelow lazy belowPath = quieter (\x->x-9) $
+            -> IO [(FilePath, (ExitCode, String, String))] -- ^ paths that we attempted to umount, and the responding output from the umount command
+umountBelow lazy belowPath =
     do procMount <- readFile "/proc/mounts"
        let mountPoints = map (unescape . (!! 1) . words) (lines procMount)
            maybeMounts = filter (isPrefixOf belowPath) (concat (map tails mountPoints))
            args path = ["-f"] ++ if lazy then ["-l"] else [] ++ [path]
        needsUmount <- filterM isMountPoint maybeMounts
-       results <- mapM (\ path -> qPutStrLn ("umountBelow: umount " ++ intercalate " " (args path)) >> umount (args path) >>= return . ((,) path)) needsUmount
+       results <- mapM (\ path -> hPutStrLn stderr ("umountBelow: umount " ++ intercalate " " (args path)) >> umount (args path) >>= return . ((,) path)) needsUmount
        let results' = map fixNotMounted results
-       mapM_ (\ (result, result') -> qPutStrLn (show result ++ (if result /= result' then " -> " ++ show result' else ""))) (zip results results')
+       mapM_ (\ (result, result') -> hPutStrLn stderr (show result ++ (if result /= result' then " -> " ++ show result' else ""))) (zip results results')
        -- Did /proc/mounts change?  If so we should try again because
        -- nested mounts might have been revealed.
        procMount' <- readFile "/proc/mounts"
        results'' <- if procMount /= procMount' then umountBelow lazy belowPath else return []
        return $ results' ++ results''
     where
-      fixNotMounted (path, ("", err, ExitFailure 1)) | err == ("umount: " ++ path ++ ": not mounted\n") = (path, ("", "" , ExitSuccess))
+      fixNotMounted (path, (ExitFailure 1, "", err)) | err == ("umount: " ++ path ++ ": not mounted\n") = (path, (ExitSuccess, "", ""))
       fixNotMounted x = x
 
 -- |umountSucceeded - predicated suitable for filtering results of 'umountBelow'
@@ -95,8 +92,8 @@ escape (c:rest)    = c : (escape rest)
 -- NOTE: this function uses exec, so you do /not/ need to shell-escape
 -- NOTE: we don't use the umount system call because the system call
 -- is not smart enough to update \/etc\/mtab
-umount :: [String] -> IO (String, String, ExitCode)
-umount args = lazyProcess "umount" args Nothing Nothing empty >>= return . collectOutputUnpacked
+umount :: [String] -> IO (ExitCode, String, String)
+umount args = readProcessWithExitCode "umount" args ""
 
 isMountPoint :: FilePath -> IO Bool
 -- This implements the functionality of mountpoint(1), deciding

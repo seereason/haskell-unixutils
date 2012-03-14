@@ -17,7 +17,6 @@ import System.Exit
 import System.IO
 import System.Posix.Files
 import System.Process
-import System.Unix.Process
 
 {-# DEPRECATED md5sum "Use Data.ByteString.Lazy.Char8.readFile path >>= return . show . Data.Digest.Pure.MD5.md5" #-}
 md5sum :: FilePath -> IO String

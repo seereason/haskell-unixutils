@@ -366,3 +366,26 @@ collectResult output =
       isResult _ = False
       unResult ([Result x], out) = (x, out)
       unResult _ = error $ "Internal error - wrong number of results"
+
+{-
+-- These were in System.Unix.Chroot, uncomment and export some package
+-- still needs them.
+
+-- |A function to force the process output by examining it but not
+-- printing anything.
+forceList :: [a] -> IO [a]
+forceList output = evaluate (length output) >> return output
+
+-- |First send the process output to the and then force it.
+forceList' :: [Output] -> IO [Output]
+forceList' output = printOutput output >>= forceList
+
+-- |Print all the output to the appropriate output channel
+printOutput :: [Output] -> IO [Output]
+printOutput output =
+    mapM print output
+    where
+      print x@(Stdout s) = putStr (B.unpack s) >> return x
+      print x@(Stderr s) = hPutStr stderr (B.unpack s) >> return x
+      print x = return x
+-}
