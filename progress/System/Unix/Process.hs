@@ -34,7 +34,7 @@ module System.Unix.Process
 import Control.Concurrent (threadDelay)
 import Control.Monad (liftM, filterM)
 import "mtl" Control.Monad.Trans (MonadIO(liftIO))
---import Control.Exception hiding (catch)
+import Control.Exception
 --import Control.Parallel.Strategies (rnf)
 import Data.Char (isDigit)
 import qualified Data.ByteString as B
@@ -44,6 +44,7 @@ import Data.ByteString.Internal(toForeignPtr)	-- for hPutNonBlocking only
 import Data.List (isPrefixOf, partition)
 import Data.Int (Int64)
 import qualified GHC.IO.Exception as E
+import Prelude hiding (catch)
 import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess, runInteractiveCommand)
 import System.IO (Handle, hSetBinaryMode, hReady, hPutBufNonBlocking, hClose {-, hGetContents-})
 import System.IO.Unsafe (unsafeInterleaveIO)
@@ -78,9 +79,9 @@ killByCwd path =
     where
       isCwd :: FilePath -> String -> IO Bool
       isCwd cwd pid =
-          catch (liftM (isPrefixOf cwd) (readSymbolicLink ("/proc/" ++ pid ++"/cwd"))) (const (return False))
+          (liftM (isPrefixOf cwd) (readSymbolicLink ("/proc/" ++ pid ++"/cwd"))) `catch` (\ (_ :: SomeException) -> return False)
       exePath :: String -> IO (Maybe String)
-      exePath pid = catch (readSymbolicLink ("/proc/" ++ pid ++"/exe") >>= return . Just) (const (return Nothing))
+      exePath pid = (readSymbolicLink ("/proc/" ++ pid ++"/exe") >>= return . Just) `catch` (\ (_ :: SomeException) -> return Nothing)
       kill :: String -> IO ()
       kill pidStr = signalProcess sigTERM (read pidStr)
 
