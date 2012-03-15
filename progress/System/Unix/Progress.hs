@@ -42,7 +42,7 @@ import qualified Data.Set as Set
 import Data.Time (NominalDiffTime, getCurrentTime, diffUTCTime)
 import System.Exit (ExitCode(..))
 import System.Unix.Process (lazyProcess, lazyCommand, Output(Stdout, Stderr),
-                            exitCodeOnly, stdoutOnly, mergeToStdout)
+                            exitCodeOnly, stdoutOnly, mergeToStdout, collectOutputUnpacked)
 import System.Unix.QIO (quietness, ePutStr, ePutStrLn, qPutStr)
 import Test.HUnit
 
@@ -189,12 +189,19 @@ doProgress flags cmd output =
           | Set.member All flags =
               return output
           | Set.member AllOnFail flags && exitCodeOnly output /= ExitSuccess =
+              let (out, err, code) = collectOutputUnpacked output in
+              ePutStrLn ("*** FAILURE: " ++ cmd ++ " -> " ++ show code ++
+                         "\n\nstdout:\n" ++ prefix "> " out ++
+                         "\n\nstderr:\n" ++ prefix "> " err) >>
               ePutStrLn ("*** FAILURE: " ++ cmd ++ " -> " ++ show (exitCodeOnly output)) >>
               printOutput (prefixes opre epre output)
           | Set.member Errors flags =
               return output
           | Set.member ErrorsOnFail flags && exitCodeOnly output /= ExitSuccess =
-              ePutStrLn ("*** FAILURE: " ++ cmd ++ " -> " ++ show (exitCodeOnly output)) >>
+              let (out, err, code) = collectOutputUnpacked output in
+              ePutStrLn ("*** FAILURE: " ++ cmd ++ " -> " ++ show code ++
+                         "\n\nstdout:\n" ++ prefix "> " out ++
+                         "\n\nstderr:\n" ++ prefix "> " err) >>
               printErrors (prefixes opre epre output)
           | True =
               return output
@@ -208,10 +215,15 @@ doProgress flags cmd output =
           | Set.member ExceptionOnFail flags =
               case exitCodeOnly output of
                 ExitSuccess -> return output
-                result -> fail ("*** FAILURE: " ++ cmd ++ " -> " ++ show result)
+                _ ->
+                    let (out, err, code) = collectOutputUnpacked output in
+                    fail ("*** FAILURE: " ++ cmd ++ " -> " ++ show code ++
+                          "\n\nstdout:\n" ++ prefix "> " out ++
+                          "\n\nstderr:\n" ++ prefix "> " err)
           | True = return output
       opre = B.pack " 1> "
       epre = B.pack " 2> "
+      prefix pre s = unlines . map (pre ++) . lines $ s
 
 -- |Print one dot to stderr for every COUNT characters of output.
 dotOutput :: MonadIO m => Int -> [Output] -> m [Output]
@@ -228,7 +240,7 @@ dotOutput groupSize output =
       length _ = 0
 
 -- |Add prefixes to the output stream after every newline that is followed
--- by additional text, and at the beginning 
+-- by additional text, and at the beginning
 prefixes :: B.ByteString -> B.ByteString -> [Output] -> [(Output, Output)]
 prefixes opre epre output =
     f True output
@@ -249,7 +261,7 @@ prefixes opre epre output =
                     (B.concat [x, (B.pack "\n"), s'], bol')
           -- There is some text before a possible newline
           else let x = (if bol then B.append pre a else a)
-                   (s', bol') = doOutput False pre b in 
+                   (s', bol') = doOutput False pre b in
                (B.append x s', bol')
 
 -- |Print all the output to the appropriate output channel.  Each pair
