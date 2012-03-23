@@ -37,6 +37,7 @@ Depends: ${shlibs:Depends},
 Recommends: ${haskell:Recommends}
 Suggests: ${haskell:Suggests}
 Provides: ${haskell:Provides}
+Conflicts: libghc-progress-dev (< 1.50)
 Description: A crude interface between Haskell and Unix-like operating systems
   A collection of useful and mildly useful functions that you might
   expect to find in System.* which a heavy bias towards Unix-type operating systems.
@@ -50,6 +51,7 @@ Package: libghc-unixutils-prof
 Architecture: any
 Section: libdevel
 Depends: ${haskell:Depends}, libghc-unixutils-dev
+Conflicts: libghc-progress-prof (< 1.50)
 Description: A crude interface between Haskell and Unix-like operating systems
   A collection of useful and mildly useful functions that you might
   expect to find in System.* which a heavy bias towards Unix-type operating systems.
@@ -63,6 +65,7 @@ Package: libghc-unixutils-doc
 Architecture: any
 Section: libdevel
 Depends: ${haskell:Depends}
+Conflicts: libghc-progress-doc (< 1.50)
 Description: A crude interface between Haskell and Unix-like operating systems
  A collection of useful and mildly useful functions that you might
  expect to find in System.* which a heavy bias towards Unix-type operating systems.
