@@ -23,6 +23,7 @@ Library
         System.Unix.FilePath,
         System.Unix.Misc,
         System.Unix.Mount,
+        System.Unix.Process,
         System.Unix.SpecialDevice,
         System.Unix.Files
     if !os(darwin)

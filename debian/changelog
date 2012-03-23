@@ -1,3 +1,10 @@
+haskell-unixutils (1.50) unstable; urgency=low
+
+  * Add System.Unix.Process, simple extensions of two functions in
+    System.Process.
+
+ -- David Fox <dsf@seereason.com>  Fri, 23 Mar 2012 10:47:30 -0700
+
 haskell-unixutils (1.49.1) unstable; urgency=low
 
   * Restore a dropped argument to rsync.
