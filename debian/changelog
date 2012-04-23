@@ -1,3 +1,9 @@
+haskell-unixutils (1.51) unstable; urgency=low
+
+  * Add killByCwd, moved here from the progress package.
+
+ -- David Fox <dsf@seereason.com>  Mon, 23 Apr 2012 10:17:39 -0700
+
 haskell-unixutils (1.50) unstable; urgency=low
 
   * Add System.Unix.Process, simple extensions of two functions in

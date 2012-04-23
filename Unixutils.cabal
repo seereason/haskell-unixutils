@@ -1,5 +1,5 @@
 Name:           Unixutils
-Version:        1.50
+Version:        1.51
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw, David Fox
@@ -21,6 +21,7 @@ Library
         System.Unix.Crypt,
         System.Unix.Directory,
         System.Unix.FilePath,
+        System.Unix.KillByCwd,
         System.Unix.Misc,
         System.Unix.Mount,
         System.Unix.Process,
