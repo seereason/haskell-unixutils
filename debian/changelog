@@ -1,3 +1,10 @@
+haskell-unixutils (1.52) unstable; urgency=low
+
+  * Moved the functions in System.Unix.Process to the process-extras
+    package.
+
+ -- David Fox <dsf@seereason.com>  Mon, 08 Oct 2012 09:57:17 -0700
+
 haskell-unixutils (1.51) unstable; urgency=low
 
   * Add killByCwd, moved here from the progress package.
