@@ -1,3 +1,10 @@
+haskell-unixutils (1.52.1) unstable; urgency=low
+
+  * Use finally to ensure that the ssh socket gets unmounted when useEnv
+    exits.
+
+ -- David Fox <dsf@seereason.com>  Mon, 14 Oct 2013 10:09:40 -0700
+
 haskell-unixutils (1.52) unstable; urgency=low
 
   * Moved the functions in System.Unix.Process to the process-extras

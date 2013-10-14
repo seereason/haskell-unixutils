@@ -81,11 +81,9 @@ useEnv rootPath force action =
           withMountBind dir (rootPath ++ dir) action
           where dir = dropTrailingPathSeparator (dropFileName sockPath)
       withMountBind toMount mountPoint action =
-          do createDirectoryIfMissing True mountPoint
-             run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
-             result <- action
-             run "/bin/umount" [escapePathForMount mountPoint]
-             return result
+          (do createDirectoryIfMissing True mountPoint
+              run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
+              action) `finally` (run "/bin/umount" [escapePathForMount mountPoint])
       escapePathForMount = id	-- FIXME - Path arguments should be escaped
 
       run cmd args =
