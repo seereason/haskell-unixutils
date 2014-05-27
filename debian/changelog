@@ -1,3 +1,11 @@
+haskell-unixutils (1.52.3) unstable; urgency=low
+
+  * In System.Unix.Chroot.useEnv, create the /root in the environment
+    before trying to rsync the files in $HOME/.ssh to it.
+  * Replace imports of System.Cmd with System.Process
+
+ -- David Fox <dsf@seereason.com>  Tue, 27 May 2014 13:21:27 -0700
+
 haskell-unixutils (1.52.2) unstable; urgency=low
 
   * Allow ghc >= 7.8 as a substitute for libghc-parallel.

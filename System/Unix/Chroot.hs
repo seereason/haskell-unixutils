@@ -75,6 +75,7 @@ useEnv rootPath force action =
       copySSH Nothing = return ()
       copySSH (Just home) =
           -- Do NOT preserve ownership, files must be owned by root.
+          createDirectoryIfMissing True (rootPath ++ "/root") >>
           run "/usr/bin/rsync" ["-rlptgDHxS", "--delete", home ++ "/.ssh/", rootPath ++ "/root/.ssh"]
       withSock Nothing action = action
       withSock (Just sockPath) action =

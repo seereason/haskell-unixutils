@@ -12,7 +12,7 @@ module System.Unix.Directory
 
 import Control.Exception
 import Data.List (isSuffixOf)
-import System.Cmd
+import System.Process
 import System.Directory
 import System.Exit
 import System.FilePath

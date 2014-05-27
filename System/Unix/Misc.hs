@@ -11,7 +11,7 @@ import qualified Codec.Compression.GZip
 import Data.ByteString.Lazy.Char8 (empty, readFile, writeFile)
 import Data.Digest.Pure.MD5 (md5)
 import Data.Maybe
-import System.Cmd
+import System.Process
 import System.Directory
 import System.Exit
 import System.IO
