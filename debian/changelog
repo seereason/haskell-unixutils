@@ -1,3 +1,9 @@
+haskell-unixutils (1.52.4) unstable; urgency=low
+
+  * Changes for ghc-7.10.
+
+ -- David Fox <dsf@seereason.com>  Fri, 06 Feb 2015 09:21:48 -0800
+
 haskell-unixutils (1.52.3) unstable; urgency=low
 
   * In System.Unix.Chroot.useEnv, create the /root in the environment
