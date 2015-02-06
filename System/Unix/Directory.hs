@@ -84,7 +84,7 @@ traverse path f d m =
 --	when you are inside a chroot.
 removeRecursiveSafely :: FilePath -> IO ()
 removeRecursiveSafely path =
-    traverse path removeFile removeDirectory umount
+    System.Unix.Directory.traverse path removeFile removeDirectory umount
     where
       umount path =
           do
@@ -102,7 +102,7 @@ unmountRecursiveSafely :: FilePath -> IO ()
 -- unmounts anything it finds mounted.  Note that this can be much
 -- slower than Mount.umountBelow, use that instead.
 unmountRecursiveSafely path =
-    traverse path noOp noOp umount
+    System.Unix.Directory.traverse path noOp noOp umount
     where
       noOp _ = return ()
       umount path =
