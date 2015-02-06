@@ -3,7 +3,7 @@ Version:        1.52.3
 License:        BSD3
 License-File:	COPYING
 Author:         Jeremy Shaw, David Fox
-Homepage:       http://src.seereason.com/haskell-unixutils
+Homepage:       https://github.com/seereason/haskell-unixutils.git
 Category:	System
 Synopsis:       A crude interface between Haskell and Unix-like operating systems
 Maintainer:     jeremy@n-heptane.com
