@@ -1,3 +1,10 @@
+haskell-unixutils (1.53) unstable; urgency=low
+
+  * Move some code for managing /proc and /sys and other mounts
+    into System.Unix.Mount.
+
+ -- David Fox <dsf@seereason.com>  Sat, 04 Apr 2015 14:00:06 -0700
+
 haskell-unixutils (1.52.4) unstable; urgency=low
 
   * Changes for ghc-7.10.
