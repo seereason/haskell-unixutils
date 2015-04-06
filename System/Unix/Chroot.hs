@@ -7,8 +7,9 @@ module System.Unix.Chroot
     -- , forceList'
     ) where
 
-import Control.Exception (finally, evaluate)
-
+import Control.Exception (evaluate)
+import Control.Monad.Catch (MonadMask, finally)
+import Control.Monad.Trans (MonadIO, liftIO)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import Foreign.C.Error
@@ -41,13 +42,13 @@ chroot fp = withCString fp $ \cfp -> throwErrnoIfMinus1_ "chroot" (c_chroot cfp)
 -- chroot and working directory of all the threads in the process,
 -- so...
 -- NOTE: will throw IOError if internal chroot fails
-fchroot :: FilePath -> IO a -> IO a
+fchroot :: (MonadIO m, MonadMask m) => FilePath -> m a -> m a
 fchroot path action =
-    do origWd <- getWorkingDirectory
-       rootFd <- openFd "/" ReadOnly Nothing defaultFileFlags
-       chroot path
-       changeWorkingDirectory "/"
-       action `finally` (breakFree origWd rootFd)
+    do origWd <- liftIO $ getWorkingDirectory
+       rootFd <- liftIO $ openFd "/" ReadOnly Nothing defaultFileFlags
+       liftIO $ chroot path
+       liftIO $ changeWorkingDirectory "/"
+       action `finally` (liftIO $ breakFree origWd rootFd)
     where
       breakFree origWd rootFd =
           do changeWorkingDirectoryFd rootFd
@@ -58,15 +59,15 @@ fchroot path action =
 -- |The ssh inside of the chroot needs to be able to talk to the
 -- running ssh-agent.  Therefore we mount --bind the ssh agent socket
 -- dir inside the chroot (and umount it when we exit the chroot.
-useEnv :: FilePath -> (a -> IO a) -> IO a -> IO a
+useEnv :: (MonadIO m, MonadMask m) => FilePath -> (a -> m a) -> m a -> m a
 useEnv rootPath force action =
     do -- In order to minimize confusion, this QIO message is output
        -- at default quietness.  If you want to suppress it while seeing
        -- the output from your action, you need to say something like
        -- quieter (+ 1) (useEnv (quieter (\x->x-1) action))
-       sockPath <- getEnv "SSH_AUTH_SOCK"
-       home <- getEnv "HOME"
-       copySSH home
+       sockPath <- liftIO $ getEnv "SSH_AUTH_SOCK"
+       home <- liftIO $ getEnv "HOME"
+       liftIO $ copySSH home
        -- We need to force the output before we exit the changeroot.
        -- Otherwise we lose our ability to communicate with the ssh
        -- agent and we get errors.
@@ -77,14 +78,16 @@ useEnv rootPath force action =
           -- Do NOT preserve ownership, files must be owned by root.
           createDirectoryIfMissing True (rootPath ++ "/root") >>
           run "/usr/bin/rsync" ["-rlptgDHxS", "--delete", home ++ "/.ssh/", rootPath ++ "/root/.ssh"]
+      withSock :: (MonadIO m, MonadMask m) => Maybe FilePath -> m a -> m a
       withSock Nothing action = action
       withSock (Just sockPath) action =
           withMountBind dir (rootPath ++ dir) action
           where dir = dropTrailingPathSeparator (dropFileName sockPath)
+      withMountBind :: (MonadIO m, MonadMask m) => FilePath -> FilePath -> m a -> m a
       withMountBind toMount mountPoint action =
-          (do createDirectoryIfMissing True mountPoint
-              run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
-              action) `finally` (run "/bin/umount" [escapePathForMount mountPoint])
+          (do liftIO $ createDirectoryIfMissing True mountPoint
+              liftIO $ run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
+              action) `finally` (liftIO $ run "/bin/umount" [escapePathForMount mountPoint])
       escapePathForMount = id	-- FIXME - Path arguments should be escaped
 
       run cmd args =

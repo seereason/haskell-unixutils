@@ -1,3 +1,10 @@
+haskell-unixutils (1.54) unstable; urgency=low
+
+  * Change the monad of fchroot and useEnv from IO to (MonadIO m,
+    MonadMask m) => m.
+
+ -- David Fox <dsf@seereason.com>  Sun, 05 Apr 2015 17:24:18 -0700
+
 haskell-unixutils (1.53) unstable; urgency=low
 
   * Move some code for managing /proc and /sys and other mounts
