@@ -10,7 +10,7 @@ import System.IO.Error (isAlreadyExistsError)
 forceSymbolicLink :: FilePath -> FilePath -> IO ()
 forceSymbolicLink target linkName =
     createSymbolicLink target linkName `catch`
-      (\e -> if isAlreadyExistsError e 
+      (\e -> if isAlreadyExistsError e
              then do removeLink linkName
                      createSymbolicLink target linkName
              else ioError e)

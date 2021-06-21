@@ -3,7 +3,7 @@
 -- | The function splitFileName is taken from missingh, at the moment
 -- missingh will not build under sid.
 
-module System.Unix.FilePath 
+module System.Unix.FilePath
     (dirName,
      baseName,
      realpath,

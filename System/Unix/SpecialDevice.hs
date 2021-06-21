@@ -2,30 +2,30 @@
 -- | Construct an ADT representing block and character devices
 -- (but mostly block devices) by interpreting the contents of
 -- the Linux sysfs filesystem.
-module System.Unix.SpecialDevice 
+module System.Unix.SpecialDevice
     (SpecialDevice,
-     sysMountPoint,	-- IO String
-     ofNode,		-- FilePath -> IO (Maybe SpecialDevice)
-     ofNodeStatus,	-- FileStatus -> Maybe SpecialDevice
-     ofPath,		-- FilePath -> IO (Maybe SpecialDevice)
-     rootPart,		-- IO (Maybe SpecialDevice)
-     ofDevNo,		-- (DeviceID -> SpecialDevice) -> Int -> SpecialDevice
-     ofSysName,		-- String -> IO (Maybe SpecialDevice)
-     ofSysPath,		-- (DeviceID -> SpecialDevice) -> FilePath -> IO (Maybe SpecialDevice)
-     toDevno,		-- SpecialDevice -> Int
-     --major,		-- SpecialDevice -> Int
-     --minor,		-- SpecialDevice -> Int
-     ofMajorMinor,	-- (DeviceID -> SpecialDevice) -> Int -> Int -> SpecialDevice
-     node,		-- SpecialDevice -> IO (Maybe FilePath)
-     nodes,		-- SpecialDevice -> IO [FilePath]
-     sysName,		-- SpecialDevice -> IO (Maybe String)
-     splitPart,		-- String -> (String, Int)
-     sysDir,		-- SpecialDevice -> IO (Maybe FilePath)
-     diskOfPart,	-- SpecialDevice -> IO (Maybe SpecialDevice)
-     getAllDisks,	-- IO [SpecialDevice]
-     getAllPartitions,	-- IO [SpecialDevice]
-     getAllCdroms,	-- IO [SpecialDevice]
-     getAllRemovable,	-- IO [SpecialDevice]
+     sysMountPoint,     -- IO String
+     ofNode,            -- FilePath -> IO (Maybe SpecialDevice)
+     ofNodeStatus,      -- FileStatus -> Maybe SpecialDevice
+     ofPath,            -- FilePath -> IO (Maybe SpecialDevice)
+     rootPart,          -- IO (Maybe SpecialDevice)
+     ofDevNo,           -- (DeviceID -> SpecialDevice) -> Int -> SpecialDevice
+     ofSysName,         -- String -> IO (Maybe SpecialDevice)
+     ofSysPath,         -- (DeviceID -> SpecialDevice) -> FilePath -> IO (Maybe SpecialDevice)
+     toDevno,           -- SpecialDevice -> Int
+     --major,           -- SpecialDevice -> Int
+     --minor,           -- SpecialDevice -> Int
+     ofMajorMinor,      -- (DeviceID -> SpecialDevice) -> Int -> Int -> SpecialDevice
+     node,              -- SpecialDevice -> IO (Maybe FilePath)
+     nodes,             -- SpecialDevice -> IO [FilePath]
+     sysName,           -- SpecialDevice -> IO (Maybe String)
+     splitPart,         -- String -> (String, Int)
+     sysDir,            -- SpecialDevice -> IO (Maybe FilePath)
+     diskOfPart,        -- SpecialDevice -> IO (Maybe SpecialDevice)
+     getAllDisks,       -- IO [SpecialDevice]
+     getAllPartitions,  -- IO [SpecialDevice]
+     getAllCdroms,      -- IO [SpecialDevice]
+     getAllRemovable,   -- IO [SpecialDevice]
 --     toDevName,
 --     getBlkidAlist,
 --     getBlkidInfo,
@@ -78,7 +78,7 @@ ofNodeStatus status =
         (Just . BlockDevice . specialDeviceID $ status) else
         if isCharacterDevice status then
             (Just . CharacterDevice . specialDeviceID $ status) else
-            Nothing    
+            Nothing
 
 ofSysName :: String -> IO (Maybe SpecialDevice)
 ofSysName name =
@@ -144,7 +144,7 @@ sysName :: SpecialDevice -> IO (Maybe String)
 sysName dev = sysDir dev >>= return . maybe Nothing (Just . basename)
 
 sysDir :: SpecialDevice -> IO (Maybe FilePath)
-sysDir dev@(BlockDevice _) = 
+sysDir dev@(BlockDevice _) =
     do
       (pairs' :: [(FilePath, FileStatus)]) <- directory_find False (sysMountPoint ++ "/block")
       let (paths :: [FilePath]) = map fst . filter isDev $ pairs'
@@ -194,10 +194,10 @@ isPart (path, _) =
       x -> True
 
 getAllCdroms :: IO [SpecialDevice]
-getAllCdroms = cdromGroup >>= getDisksInGroup 
+getAllCdroms = cdromGroup >>= getDisksInGroup
 
 getAllRemovable :: IO [SpecialDevice]
-getAllRemovable = floppyGroup >>= getDisksInGroup 
+getAllRemovable = floppyGroup >>= getDisksInGroup
 
 -- ofNode "/dev/sda1" >>= maybe (return Nothing) sysDir >>= putStrLn . show
 -- -> Just "/sys/block/sda/sda1/dev"

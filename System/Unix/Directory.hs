@@ -28,7 +28,7 @@ find path =
     do
       status <- getSymbolicLinkStatus path
       case isDirectory status of
-        True -> 
+        True ->
             do
               subs <- getDirectoryContents path >>=
                       return . map (path </>) . filter (not . flip elem [".", ".."]) >>=
@@ -134,7 +134,7 @@ renameFileWithBackup src dst =
 
 -- |temporarily change the working directory to |dir| while running |action|
 withWorkingDirectory :: FilePath -> IO a -> IO a
-withWorkingDirectory dir action = 
+withWorkingDirectory dir action =
     bracket getCurrentDirectory setCurrentDirectory (\ _ -> setCurrentDirectory dir >> action)
 
 -- |create a temporary directory, run the action, remove the temporary directory
@@ -153,7 +153,7 @@ foreign import ccall unsafe "stdlib.h mkdtemp"
   c_mkdtemp :: CString -> IO CString
 
 mkdtemp :: FilePath -> IO FilePath
-mkdtemp template = 
+mkdtemp template =
       withCString (if "XXXXXX" `isSuffixOf` template then template else (template ++ "XXXXXX")) $ \ ptr -> do
         cname <- throwErrnoIfNull "mkdtemp" (c_mkdtemp ptr)
         name <- peekCString cname

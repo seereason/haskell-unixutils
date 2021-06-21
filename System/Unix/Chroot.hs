@@ -88,7 +88,7 @@ useEnv rootPath force action =
           (do liftIO $ createDirectoryIfMissing True mountPoint
               liftIO $ run "/bin/mount" ["--bind", escapePathForMount toMount, escapePathForMount mountPoint]
               action) `finally` (liftIO $ run "/bin/umount" [escapePathForMount mountPoint])
-      escapePathForMount = id	-- FIXME - Path arguments should be escaped
+      escapePathForMount = id   -- FIXME - Path arguments should be escaped
 
       run cmd args =
           do (code, out, err) <- readProcessWithExitCode cmd args ""

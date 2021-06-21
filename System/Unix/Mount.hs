@@ -1,9 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
 -- |functions for mounting, umounting, parsing \/proc\/mounts, etc
 module System.Unix.Mount
-    ( umountBelow	-- FilePath -> IO [(FilePath, (String, String, ExitCode))]
-    , umount		-- [String] -> IO (String, String, ExitCode)
-    , isMountPoint	-- FilePath -> IO Bool
+    ( umountBelow       -- FilePath -> IO [(FilePath, (String, String, ExitCode))]
+    , umount            -- [String] -> IO (String, String, ExitCode)
+    , isMountPoint      -- FilePath -> IO Bool
 
     , withMount
     , WithProcAndSys(runWithProcAndSys)

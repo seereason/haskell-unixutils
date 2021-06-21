@@ -4,7 +4,7 @@
 -- Module      :  System.Unix.Crypt
 -- Copyright   :  (c) 2010
 -- License     :  BSD3
--- 
+--
 -- Maintainer  :  jeremy@seereason.com
 -- Stability   :  provisional
 -- Portability :  non-portable (requires POSIX)
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module System.Unix.Crypt 
+module System.Unix.Crypt
     ( crypt
     )
     where
@@ -23,7 +23,7 @@ import Foreign.C
 foreign import ccall unsafe "unistd.h crypt"
   c_crypt :: CString -> CString -> IO CString
 
--- | calls crypt(3) 
+-- | calls crypt(3)
 crypt :: String -- ^ key
       -> String -- ^ salt
       -> IO String -- ^ encrypted password
