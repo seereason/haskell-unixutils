@@ -11,7 +11,7 @@ Description:
  A collection of useful and mildly useful functions that you might
  expect to find in System.* which a heavy bias towards Unix-type operating systems.
 Build-type:	Simple
-Cabal-Version: >= 1.2
+Cabal-Version: >= 1.8
 
 Library
     Build-Depends:
