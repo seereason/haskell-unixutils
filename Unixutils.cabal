@@ -28,7 +28,7 @@ Library
       regex-tdfa,
       unix,
       zlib
-    ghc-options:	-O2
+    ghc-options:	-O
     Exposed-modules:
         System.Unix.Chroot,
         System.Unix.Crypt,
