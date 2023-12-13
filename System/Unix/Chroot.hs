@@ -45,7 +45,7 @@ chroot fp = withCString fp $ \cfp -> throwErrnoIfMinus1_ "chroot" (c_chroot cfp)
 fchroot :: (MonadIO m, MonadMask m) => FilePath -> m a -> m a
 fchroot path action =
     do origWd <- liftIO $ getWorkingDirectory
-       rootFd <- liftIO $ openFd "/" ReadOnly Nothing defaultFileFlags
+       rootFd <- liftIO $ openFd "/" ReadOnly defaultFileFlags
        liftIO $ chroot path
        liftIO $ changeWorkingDirectory "/"
        action `finally` (liftIO $ breakFree origWd rootFd)
