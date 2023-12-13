@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP #-}
 -- | This module, except for useEnv, is copied from the build-env package.
 module System.Unix.Chroot
     ( fchroot
@@ -45,7 +46,11 @@ chroot fp = withCString fp $ \cfp -> throwErrnoIfMinus1_ "chroot" (c_chroot cfp)
 fchroot :: (MonadIO m, MonadMask m) => FilePath -> m a -> m a
 fchroot path action =
     do origWd <- liftIO $ getWorkingDirectory
+#if MIN_VERSION_unix(2,8,0)
        rootFd <- liftIO $ openFd "/" ReadOnly defaultFileFlags
+#else
+       rootFd <- liftIO $ openFd "/" ReadOnly Nothing defaultFileFlags
+#endif
        liftIO $ chroot path
        liftIO $ changeWorkingDirectory "/"
        action `finally` (liftIO $ breakFree origWd rootFd)
