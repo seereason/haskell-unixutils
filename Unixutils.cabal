@@ -38,5 +38,5 @@ Library
         System.Unix.Mount,
         System.Unix.SpecialDevice,
         System.Unix.Files
-    if !os(darwin)
+    if !os(darwin) && !os(linux)
         Extra-libraries: crypt
